@@ -19,7 +19,9 @@ Created on Thu Jun 22 15:43:23 2017
   
 import cv2
 print(cv2.__version__)  # my version is 3.1.0
-vidcap = cv2.VideoCapture('video2.avi')
+vidcap = cv2.VideoCapture('/Users/thammingkeat/Desktop/Badminton/video.avi')
+
+
 count = 0
 while True:
     success,image = vidcap.read()

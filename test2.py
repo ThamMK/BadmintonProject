@@ -25,6 +25,11 @@ import cv2
 import sys
 from multiprocessing import Process
 import subprocess,psutil
+import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.figure import Figure
+import neural_network as nn
 
 def global_paths():
     
@@ -52,7 +57,7 @@ class SampleApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo):
+        for F in (StartPage, PageOne, PageTwo, PageThree):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -87,8 +92,11 @@ class StartPage(tk.Frame):
                             command=lambda: controller.show_frame("PageOne"))
         button2 = tk.Button(self, text="Go to Page Two",
                             command=lambda: controller.show_frame("PageTwo"))
+        button3 = tk.Button(self, text="Go to Page Three",
+                            command=lambda: controller.show_frame("PageThree"))
         button1.pack()
         button2.pack()
+        button3.pack()
 
 
 class PageOne(tk.Frame):
@@ -180,7 +188,7 @@ class PageTwo(tk.Frame):
         buttonQuit= Button(self,text="Quit",width=8,command=self.close_current_window)
         buttonQuit.pack(in_=bottom,side=RIGHT,padx = (0,10))
         
-        self.buttonNext= Button(self,text="Next",width=8,command=self.testing)
+        self.buttonNext= Button(self,text="Next",width=8,command=lambda: controller.show_frame("PageThree"))
         self.buttonNext.pack(in_=bottom,side=RIGHT,padx = (0,10))
         self.buttonNext.config(state='disabled')
         
@@ -291,6 +299,44 @@ class PageTwo(tk.Frame):
                 print('Process found. Terminating it.')
                 process.terminate()
                 break
+
+
+class PageThree(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        instruction = Label(self, text="Output from video file", anchor="w")
+        instruction.pack(fill="both", pady=(10, 5), padx=(10, 0))
+        instruction.config(font=('Calibri',18))
+
+
+
+
+        csv_dir = '/Users/thammingkeat/PycharmProjects/athlete_data.csv'
+
+
+        predictions = nn.predict_badminton_strokes(csv_dir)
+        strokes_percentage = nn.calc_percentage_strokes(predictions)
+        figure,ax = nn.plot_predictions(strokes_percentage)
+        playstyle = nn.calc_playstyle(strokes_percentage)
+
+        canvas = FigureCanvasTkAgg(figure, self)
+        canvas.show()
+        canvas.get_tk_widget().pack(side=LEFT, fill=tk.BOTH, expand=False)
+        #canvas.get_tk_widget().grid(row=1,column=0)
+
+        percentages = 'Percentages of strokes used:' + '\n'
+        percentages += 'Smash : ' + str(round(strokes_percentage[0],2)) + '\n'
+        percentages += 'Lift : ' + str(round(strokes_percentage[1],2)) + '\n'
+        percentages += 'Net : ' + str(round(strokes_percentage[2],2)) + '\n'
+        percentages += 'Drive : ' + str(round(strokes_percentage[3],2)) + '\n'
+        percentages += 'Serve: ' + str(round(strokes_percentage[4],2)) + '\n'
+        percentages += 'Playstyle : ' + playstyle
+        percentages = Label(self, text=percentages, anchor="w")
+        percentages.pack(padx=(10,50), pady=(10,0), side=LEFT)
+
 
 if __name__ == "__main__":
     global_paths()

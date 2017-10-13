@@ -1,8 +1,13 @@
 #ifndef OPENPOSE_CORE_DATUM_HPP
 #define OPENPOSE_CORE_DATUM_HPP
 
+#include <array>
+#include <memory> // std::shared_ptr
+#include <string>
 #include <opencv2/core/core.hpp> // cv::Mat
-#include <openpose/core/common.hpp>
+#include "array.hpp"
+#include "point.hpp"
+#include "rectangle.hpp"
 
 namespace op
 {
@@ -11,7 +16,7 @@ namespace op
      * Datum is one the main OpenPose classes/structs. The workers and threads share by default a std::shared_ptr<std::vector<Datum>>. It contains
      * all the parameters that the different workers and threads need to exchange.
      */
-    struct OP_API Datum
+    struct Datum
     {
         // -------------------------------------------------- ID parameters -------------------------------------------------- //
         unsigned long long id; /**< Datum ID. Internally used to sort the Datums if multi-threading is used. */
@@ -83,13 +88,6 @@ namespace op
         Array<float> faceKeypoints;
 
         /**
-         * Face pose heatmaps (face parts and/or background) for the whole image.
-         * Analogous of bodyHeatMaps applied to face. However, there is no PAFs and the size is different.
-         * Size: #people x #face parts (70) x output_net_height x output_net_width
-         */
-        Array<float> faceHeatMaps;
-
-        /**
          * Hand detection locations (x,y,width,height) for each person in the image.
          * It is resized to cvInputData.size().
          * Size: #people
@@ -100,23 +98,16 @@ namespace op
          * Hand keypoints (x,y,score) locations for each person in the image.
          * It has been resized to the same resolution as `poseKeypoints`.
          * handKeypoints[0] corresponds to left hands, and handKeypoints[1] to right ones.
-         * Size each Array: #people x #hand parts (21) x 3 ((x,y) coordinates + score)
+         * Size: #people x #hand parts (20) x 3 ((x,y) coordinates + score)
          */
         std::array<Array<float>, 2> handKeypoints;
-
-        /**
-         * Face pose heatmaps (hand parts and/or background) for the whole image.
-         * Analogous of faceHeatMaps applied to face.
-         * Size each Array: #people x #hand parts (21) x output_net_height x output_net_width
-         */
-        std::array<Array<float>, 2> handHeatMaps;
 
         // -------------------------------------------------- Other parameters -------------------------------------------------- //
         float scaleInputToOutput; /**< Scale ratio between the input Datum::cvInputData and the output Datum::cvOutputData. */
 
         float scaleNetToOutput; /**< Scale ratio between the net output and the final output Datum::cvOutputData. */
 
-        std::vector<float> scaleRatios; /**< Scale ratios between each scale (e.g. flag `scale_number`). Used to resize the different scales. */
+        std::vector<float> scaleRatios; /**< Scale ratios between each scale (e.g. flag `num_scales`). Used to resize the different scales. */
 
         std::pair<int, std::string> elementRendered; /**< Pair with the element key id POSE_BODY_PART_MAPPING on `pose/poseParameters.hpp` and its mapped value (e.g. 1 and "Neck"). */
 

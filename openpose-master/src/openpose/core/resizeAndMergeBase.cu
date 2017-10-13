@@ -1,5 +1,6 @@
 #include <openpose/utilities/cuda.hpp>
 #include <openpose/utilities/cuda.hu>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/core/resizeAndMergeBase.hpp>
 
 namespace op
@@ -92,7 +93,7 @@ namespace op
             // Multi-scale merging
             else
             {
-                // If scale_number > 1 --> scaleRatios must be set
+                // If num_scales > 1 --> scaleRatios must be set
                 if (scaleRatios.size() != num)
                     error("The scale ratios size must be equal than the number of scales.", __LINE__, __FUNCTION__, __FILE__);
                 const auto maxScales = 10;

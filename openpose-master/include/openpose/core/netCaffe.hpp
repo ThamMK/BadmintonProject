@@ -2,13 +2,16 @@
 #ifndef OPENPOSE_CORE_NET_CAFFE_HPP
 #define OPENPOSE_CORE_NET_CAFFE_HPP
 
+#include <array>
+#include <memory> // std::shared_ptr
+#include <string>
 #include <caffe/net.hpp>
-#include <openpose/core/common.hpp>
-#include <openpose/core/net.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "net.hpp"
 
 namespace op
 {
-    class OP_API NetCaffe : public Net
+    class NetCaffe : public Net
     {
     public:
         NetCaffe(const std::array<int, 4>& netInputSize4D, const std::string& caffeProto, const std::string& caffeTrainedModel, const int gpuId = 0,

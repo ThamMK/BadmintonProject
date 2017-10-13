@@ -2,8 +2,7 @@
 #define OPENPOSE_THREAD_W_ID_GENERATOR_HPP
 
 #include <queue> // std::priority_queue
-#include <openpose/core/common.hpp>
-#include <openpose/thread/worker.hpp>
+#include "worker.hpp"
 
 namespace op
 {
@@ -29,6 +28,8 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
 namespace op
 {

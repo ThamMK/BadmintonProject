@@ -1,9 +1,9 @@
 #ifndef OPENPOSE_POSE_W_POSE_EXTRACTOR_HPP
 #define OPENPOSE_POSE_W_POSE_EXTRACTOR_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/pose/poseExtractor.hpp>
+#include <memory> // std::shared_ptr
 #include <openpose/thread/worker.hpp>
+#include "poseExtractor.hpp"
 
 namespace op
 {
@@ -29,7 +29,10 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
+#include <openpose/utilities/profiler.hpp>
 namespace op
 {
     template<typename TDatums>
@@ -59,8 +62,8 @@ namespace op
                 for (auto& tDatum : *tDatums)
                 {
                     spPoseExtractor->forwardPass(tDatum.inputNetData, Point<int>{tDatum.cvInputData.cols, tDatum.cvInputData.rows}, tDatum.scaleRatios);
-                    tDatum.poseHeatMaps = spPoseExtractor->getHeatMaps().clone();
-                    tDatum.poseKeypoints = spPoseExtractor->getPoseKeypoints().clone();
+                    tDatum.poseHeatMaps = spPoseExtractor->getHeatMaps();
+                    tDatum.poseKeypoints = spPoseExtractor->getPoseKeypoints();
                     tDatum.scaleNetToOutput = spPoseExtractor->getScaleNetToOutput();
                 }
                 // Profiling speed

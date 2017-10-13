@@ -20,6 +20,7 @@
 *_pb2.py
 
 # Compiled python
+*__init__.py
 *.pyc
 
 # Compiled MATLAB
@@ -58,12 +59,6 @@ MANIFEST-*
 # OSX dir files
 .DS_Store
 
-# Vim files
-cscope.*
-tags
-.clang_complete
-.vim
-
 ######################### Windows (Visual Studio) Files #########################
 *.db
 *.deps
@@ -74,11 +69,9 @@ tags
 ######################### Windows (Visual Studio) Folders #########################
 *.vs/
 *x64/
-3rdparty/windows/caffe/
-3rdparty/windows/caffe3rdparty/
-3rdparty/windows/opencv/
-3rdparty/windows/freeglut/
-3rdparty/windows/spinnaker/
+3rdparty/caffe/dependencies/
+3rdparty/caffe/include/
+3rdparty/lib/
 # Allowing this file (removed *.user for Qt)
 !*.vcxproj.user
 
@@ -89,8 +82,7 @@ Makefile.config
 # Data and models are either
 	# 1. reference, and not casually committed
 	# 2. custom, and live on their own unless they're deliberated contributed
-3rdparty/caffe/.git
-3rdparty/caffe/.github
+3rdparty/caffe/.*
 distribute/
 .build_release/
 .build_debug/
@@ -126,4 +118,6 @@ html/
 *.mov
 
 ######################### Validation Scripts & Testing #########################
+*validation.sh
+validation*.sh
 output*/

@@ -1,3 +1,4 @@
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/keypoint.hpp>
 #include <openpose/core/keypointScaler.hpp>
 

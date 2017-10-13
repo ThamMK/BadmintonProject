@@ -2,18 +2,21 @@
 #ifndef OPENPOSE_POSE_POSE_EXTRACTOR_CAFFE_HPP
 #define OPENPOSE_POSE_POSE_EXTRACTOR_CAFFE_HPP
 
+#include <memory> // std::shared_ptr
 #include <caffe/blob.hpp>
-#include <openpose/core/common.hpp>
+#include <openpose/core/array.hpp>
+#include <openpose/core/point.hpp>
 #include <openpose/core/net.hpp>
 #include <openpose/core/nmsCaffe.hpp>
 #include <openpose/core/resizeAndMergeCaffe.hpp>
-#include <openpose/pose/bodyPartConnectorCaffe.hpp>
-#include <openpose/pose/enumClasses.hpp>
-#include <openpose/pose/poseExtractor.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "bodyPartConnectorCaffe.hpp"
+#include "enumClasses.hpp"
+#include "poseExtractor.hpp"
 
 namespace op
 {
-    class OP_API PoseExtractorCaffe : public PoseExtractor
+    class PoseExtractorCaffe : public PoseExtractor
     {
     public:
         PoseExtractorCaffe(const Point<int>& netInputSize, const Point<int>& netOutputSize, const Point<int>& outputSize, const int scaleNumber,

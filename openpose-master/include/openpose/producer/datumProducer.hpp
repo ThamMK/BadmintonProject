@@ -3,10 +3,11 @@
 
 #include <atomic>
 #include <limits> // std::numeric_limits
+#include <memory> // std::shared_ptr
 #include <tuple>
-#include <openpose/core/common.hpp>
 #include <openpose/core/datum.hpp>
 #include <openpose/producer/producer.hpp>
+#include <openpose/utilities/macros.hpp>
 
 namespace op
 {
@@ -14,8 +15,7 @@ namespace op
     class DatumProducer
     {
     public:
-        explicit DatumProducer(const std::shared_ptr<Producer>& producerSharedPtr,
-                               const unsigned long long frameFirst = 0,
+        explicit DatumProducer(const std::shared_ptr<Producer>& producerSharedPtr, const unsigned long long frameFirst = 0,
                                const unsigned long long frameLast = std::numeric_limits<unsigned long long>::max(),
                                const std::shared_ptr<std::pair<std::atomic<bool>, std::atomic<int>>>& videoSeekSharedPtr = nullptr);
 
@@ -28,8 +28,7 @@ namespace op
         unsigned int mNumberConsecutiveEmptyFrames;
         std::shared_ptr<std::pair<std::atomic<bool>, std::atomic<int>>> spVideoSeek;
 
-        void checkIfTooManyConsecutiveEmptyFrames(unsigned int& numberConsecutiveEmptyFrames,
-                                                  const bool emptyFrame) const;
+        void checkIfTooManyConsecutiveEmptyFrames(unsigned int& numberConsecutiveEmptyFrames, const bool emptyFrame) const;
 
         DELETE_COPY(DatumProducer);
     };
@@ -39,17 +38,15 @@ namespace op
 
 
 
-// Implementation
-#include <opencv2/imgproc/imgproc.hpp> // cv::cvtColor
-#include <openpose/producer/datumProducer.hpp>
+// Implemenetation
+#include "openpose/utilities/errorAndLog.hpp"
+#include "openpose/producer/datumProducer.hpp"
 namespace op
 {
     template<typename TDatumsNoPtr>
-    DatumProducer<TDatumsNoPtr>::DatumProducer(const std::shared_ptr<Producer>& producerSharedPtr,
-                                               const unsigned long long frameFirst, const unsigned long long frameLast,
+    DatumProducer<TDatumsNoPtr>::DatumProducer(const std::shared_ptr<Producer>& producerSharedPtr, const unsigned long long frameFirst, const unsigned long long frameLast,
                                                const std::shared_ptr<std::pair<std::atomic<bool>, std::atomic<int>>>& videoSeekSharedPtr) :
-        mNumberFramesToProcess{(frameLast != std::numeric_limits<unsigned long long>::max()
-                                ? frameLast - frameFirst : frameLast)},
+        mNumberFramesToProcess{(frameLast != std::numeric_limits<unsigned long long>::max() ? frameLast - frameFirst : frameLast)},
         spProducer{producerSharedPtr},
         mGlobalCounter{0ll},
         mNumberConsecutiveEmptyFrames{0u},
@@ -72,11 +69,8 @@ namespace op
         try
         {
             // Check last desired frame has not been reached
-            if (mNumberFramesToProcess != std::numeric_limits<unsigned long long>::max()
-                && mGlobalCounter > mNumberFramesToProcess)
-            {
+            if (mNumberFramesToProcess != std::numeric_limits<unsigned long long>::max() && mGlobalCounter > mNumberFramesToProcess)
                 spProducer->release();
-            }
             // If producer released -> it sends an empty cv::Mat + a datumProducerRunning signal
             const bool datumProducerRunning = spProducer->isOpened();
             auto datums = std::make_shared<TDatumsNoPtr>(1);
@@ -99,17 +93,6 @@ namespace op
                 // Get cv::Mat
                 datum.name = spProducer->getFrameName();
                 datum.cvInputData = spProducer->getFrame();
-                if (datum.cvInputData.channels() != 3)
-                {
-                    const std::string commonMessage{"Input images must be 3-channel BGR."};
-                    if (datum.cvInputData.channels() == 1)
-                    {
-                        log(commonMessage + " Converting grey image into BGR.", Priority::High);
-                        cv::cvtColor(datum.cvInputData, datum.cvInputData, CV_GRAY2BGR);
-                    }
-                    else
-                        error(commonMessage, __LINE__, __FUNCTION__, __FILE__);
-                }
                 datum.cvOutputData = datum.cvInputData;
                 // Check frames are not empty
                 checkIfTooManyConsecutiveEmptyFrames(mNumberConsecutiveEmptyFrames, datum.cvInputData.empty());
@@ -131,14 +114,12 @@ namespace op
     }
 
     template<typename TDatumsNoPtr>
-    void DatumProducer<TDatumsNoPtr>::checkIfTooManyConsecutiveEmptyFrames(unsigned int& numberConsecutiveEmptyFrames,
-                                                                           const bool emptyFrame) const
+    void DatumProducer<TDatumsNoPtr>::checkIfTooManyConsecutiveEmptyFrames(unsigned int& numberConsecutiveEmptyFrames, const bool emptyFrame) const
     {
         numberConsecutiveEmptyFrames = (emptyFrame ? numberConsecutiveEmptyFrames+1 : 0);
         const auto threshold = 500u;
         if (numberConsecutiveEmptyFrames >= threshold)
-            error("Detected too many (" + std::to_string(numberConsecutiveEmptyFrames) + ") empty frames in a row.",
-                  __LINE__, __FUNCTION__, __FILE__);
+            error("Detected too many (" + std::to_string(numberConsecutiveEmptyFrames) + ") empty frames in a row.", __LINE__, __FUNCTION__, __FILE__);
     }
 
     extern template class DatumProducer<DATUM_BASE_NO_PTR>;

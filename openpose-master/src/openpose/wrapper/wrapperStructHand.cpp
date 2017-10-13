@@ -2,19 +2,14 @@
 
 namespace op
 {
-    WrapperStructHand::WrapperStructHand(const bool enable_, const Point<int>& netInputSize_, const int scalesNumber_,
-                                         const float scaleRange_, const bool tracking_, const RenderMode renderMode_,
-                                         const float alphaKeypoint_, const float alphaHeatMap_,
-                                         const float renderThreshold_) :
+    WrapperStructHand::WrapperStructHand(const bool enable_, const Point<int>& netInputSize_, const DetectionMode detectionMode_,
+                                         const RenderMode renderMode_, const float alphaKeypoint_, const float alphaHeatMap_) :
         enable{enable_},
         netInputSize{netInputSize_},
-        scalesNumber{scalesNumber_},
-        scaleRange{scaleRange_},
-        tracking{tracking_},
+        detectionMode{detectionMode_},
         renderMode{renderMode_},
         alphaKeypoint{alphaKeypoint_},
-        alphaHeatMap{alphaHeatMap_},
-        renderThreshold{renderThreshold_}
+        alphaHeatMap{alphaHeatMap_}
     {
     }
 }

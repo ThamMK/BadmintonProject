@@ -243,15 +243,16 @@ class PageTwo(tk.Frame):
             FIRST_ACCESS_START = False            
             
         cap = cv2.VideoCapture(VIDEO_FILE_PATH)
-        
+
         if not cap.isOpened(): 
             print("Could not open : " + os.path.basename(VIDEO_FILE_PATH))
-        
+
         #Problem with video_to_frame rmb to change divide 2
         if 'cv2.cv' in sys.modules:
             self.length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         else:
-            self.length = int(cap.get(cv2.CAP_PROP_FPS))
+            self.length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
 
         direct =  os.getcwd() + "/output"
         os.system("rm " + direct + "/*")

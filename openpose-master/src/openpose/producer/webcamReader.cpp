@@ -1,34 +1,33 @@
+#include <string>
 #include <opencv2/highgui/highgui.hpp>
-#include <openpose/producer/webcamReader.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fastMath.hpp>
+#include <openpose/producer/webcamReader.hpp>
 
 namespace op
 {
-    WebcamReader::WebcamReader(const int webcamIndex, const Point<int>& webcamResolution, const double fps, const bool throwExceptionIfNoOpened) :
-        VideoCaptureReader{webcamIndex, throwExceptionIfNoOpened},
+    WebcamReader::WebcamReader(const int webcamIndex, const Point<int>& webcamResolution, const double fps) :
+        VideoCaptureReader{webcamIndex},
         mFps{fps},
-        mFrameNameCounter{-1},
-        mThreadOpened{false}
+        mFrameNameCounter{-1}
     {
         try
         {
-            if (isOpened())
+            if (webcamResolution != Point<int>{})
             {
-                if (webcamResolution != Point<int>{})
+                set(CV_CAP_PROP_FRAME_WIDTH, webcamResolution.x);
+                set(CV_CAP_PROP_FRAME_HEIGHT, webcamResolution.y);
+                if ((int)get(CV_CAP_PROP_FRAME_WIDTH) != webcamResolution.x || (int)get(CV_CAP_PROP_FRAME_HEIGHT) != webcamResolution.y)
                 {
-                    set(CV_CAP_PROP_FRAME_WIDTH, webcamResolution.x);
-                    set(CV_CAP_PROP_FRAME_HEIGHT, webcamResolution.y);
-                    if ((int)get(CV_CAP_PROP_FRAME_WIDTH) != webcamResolution.x || (int)get(CV_CAP_PROP_FRAME_HEIGHT) != webcamResolution.y)
-                    {
-                        const std::string logMessage{ "Desired webcam resolution " + std::to_string(webcamResolution.x) + "x" + std::to_string(webcamResolution.y)
-                                                    + " could not being set. Final resolution: " + std::to_string(intRound(get(CV_CAP_PROP_FRAME_WIDTH))) + "x"
-                                                    + std::to_string(intRound(get(CV_CAP_PROP_FRAME_HEIGHT))) };
-                        log(logMessage, Priority::Max, __LINE__, __FUNCTION__, __FILE__);
-                    }
+                    const std::string logMessage{ "Desired webcam resolution " + std::to_string(webcamResolution.x) + "x" + std::to_string(webcamResolution.y)
+                                                + " could not being set. Final resolution: " + std::to_string(intRound(get(CV_CAP_PROP_FRAME_WIDTH))) + "x"
+                                                + std::to_string(intRound(get(CV_CAP_PROP_FRAME_HEIGHT))) };
+                    log(logMessage, Priority::Max, __LINE__, __FUNCTION__, __FILE__);
                 }
+
                 // Start buffering thread
-                mThreadOpened = true;
-                mThread = std::thread{&WebcamReader::bufferingThread, this};
+                if (isOpened())
+                    mThread = std::thread{&WebcamReader::bufferingThread, this};
             }
         }
         catch (const std::exception& e)
@@ -42,11 +41,8 @@ namespace op
         try
         {
             // Close and join thread
-            if (mThreadOpened)
-            {
-                mCloseThread = true;
-                mThread.join();
-            }
+            mCloseThread = true;
+            mThread.join();
         }
         catch (const std::exception& e)
         {
@@ -133,7 +129,7 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return cv::Mat();
+            return cv::Mat{};
         }
     }
 

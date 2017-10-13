@@ -1,25 +1,26 @@
 #ifndef OPENPOSE_GUI_FRAMES_DISPLAY_HPP
 #define OPENPOSE_GUI_FRAMES_DISPLAY_HPP
 
+#include <string>
 #include <opencv2/core/core.hpp> // cv::Mat
-#include <openpose/core/common.hpp>
-#include <openpose/gui/enumClasses.hpp>
+#include <openpose/core/point.hpp>
+#include "enumClasses.hpp"
 
 namespace op
 {
     /**
      *  The FrameDisplayer class is the one presenting visually the processed frame to the user.
      */
-    class OP_API FrameDisplayer
+    class FrameDisplayer
     {
     public:
         /**
          * Constructor of the FrameDisplayer class.
-         * @param windowedName const std::string value with the opencv resulting display name. Showed at the top-left part of the window.
-         * @param initialWindowedSize const Point<int> with the initial window output resolution (width and height).
          * @param fullScreen bool from which the FrameDisplayer::GuiDisplayMode property mGuiDisplayMode will be set, i.e. specifying the type of initial display (it can be changed later).
+         * @param windowedSize const Point<int> with the windored output resolution (width and height).
+         * @param windowedName const std::string value with the opencv resulting display name. Showed at the top-left part of the window.
          */
-        FrameDisplayer(const std::string& windowedName = "OpenPose Display", const Point<int>& initialWindowedSize = Point<int>{}, const bool fullScreen = false);
+        FrameDisplayer(const Point<int>& windowedSize, const std::string& windowedName = "OpenPose Display", const bool fullScreen = false);
 
         // Due to OpenCV visualization issues (all visualization functions must be in the same thread)
         void initializationOnThread();
@@ -31,7 +32,7 @@ namespace op
         void setGuiDisplayMode(const GuiDisplayMode displayMode);
 
         /**
-         * This function switch between full screen and windowed modes (e.g. when double-click on video players or Ctrt+Enter are presed).
+         * This function switch between full screen and windowed modes (e.g. when double click on video players or Ctrt+Enter are presed).
          */
         void switchGuiDisplayMode();
 
@@ -44,8 +45,8 @@ namespace op
         void displayFrame(const cv::Mat& frame, const int waitKeyValue = -1);
 
     private:
+        const Point<int> mWindowedSize;
         const std::string mWindowName;
-        Point<int> mWindowedSize;
         GuiDisplayMode mGuiDisplayMode;
     };
 }

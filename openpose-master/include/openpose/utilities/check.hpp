@@ -1,7 +1,8 @@
 #ifndef OPENPOSE_UTILITIES_CHECK_HPP
 #define OPENPOSE_UTILITIES_CHECK_HPP
 
-#include <openpose/core/common.hpp>
+#include <string>
+#include "errorAndLog.hpp"
 
 namespace op
 {

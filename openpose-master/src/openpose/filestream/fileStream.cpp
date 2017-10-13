@@ -1,8 +1,5 @@
-#include <fstream> // std::ifstream
 #include <opencv2/highgui/highgui.hpp> // cv::imread
-#include <openpose/utilities/fastMath.hpp>
-#include <openpose/utilities/fileSystem.hpp>
-#include <openpose/utilities/string.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/filestream/jsonOfstream.hpp>
 #include <openpose/filestream/fileStream.hpp>
 
@@ -75,16 +72,14 @@ namespace op
     {
         try
         {
-            // Security checks
             if (format == DataFormat::Json && CV_MAJOR_VERSION < 3)
                 error(errorMessage, __LINE__, __FUNCTION__, __FILE__);
             if (cvMats.size() != cvMatNames.size())
                 error("cvMats.size() != cvMatNames.size()", __LINE__, __FUNCTION__, __FILE__);
-            // Save cv::Mat data
+
             cv::FileStorage fileStorage{getFullName(fileNameNoExtension, format), cv::FileStorage::WRITE};
-            for (auto i = 0u ; i < cvMats.size() ; i++)
-                fileStorage << cvMatNames[i] << (cvMats[i].empty() ? cv::Mat() : cvMats[i]);
-            // Release file
+            for (auto i = 0 ; i < cvMats.size() ; i++)
+                fileStorage << cvMatNames[i] << cvMats[i];
             fileStorage.release();
         }
         catch (const std::exception& e)
@@ -114,7 +109,7 @@ namespace op
 
             cv::FileStorage fileStorage{getFullName(fileNameNoExtension, format), cv::FileStorage::READ};
             std::vector<cv::Mat> cvMats(cvMatNames.size());
-            for (auto i = 0u ; i < cvMats.size() ; i++)
+            for (auto i = 0 ; i < cvMats.size() ; i++)
                 fileStorage[cvMatNames[i]] >> cvMats[i];
             fileStorage.release();
             return cvMats;
@@ -139,66 +134,46 @@ namespace op
         }
     }
 
-    void saveKeypointsJson(const Array<float>& keypoints, const std::string& keypointName, const std::string& fileName, const bool humanReadable)
+    void saveKeypointsJson(const Array<float>& pose, const std::string& fileName, const bool humanReadable, const std::string& keypointName)
     {
         try
         {
-            saveKeypointsJson(std::vector<std::pair<Array<float>, std::string>>{std::make_pair(keypoints, keypointName)}, fileName, humanReadable);
-        }
-        catch (const std::exception& e)
-        {
-            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-        }
-    }
+            if (!pose.empty() && pose.getNumberDimensions() != 3)
+                error("pose.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
 
-    void saveKeypointsJson(const std::vector<std::pair<Array<float>, std::string>>& keypointVector, const std::string& fileName, const bool humanReadable)
-    {
-        try
-        {
-            // Security checks
-            for (const auto& keypointPair : keypointVector)
-                if (!keypointPair.first.empty() && keypointPair.first.getNumberDimensions() != 3 )
-                    error("keypointVector.getNumberDimensions() != 3.", __LINE__, __FUNCTION__, __FILE__);
+            const auto numberPeople = pose.getSize(0);
+            const auto numberBodyParts = pose.getSize(1);
+
             // Record frame on desired path
             JsonOfstream jsonOfstream{fileName, humanReadable};
             jsonOfstream.objectOpen();
+
             // Version
             jsonOfstream.key("version");
-            jsonOfstream.plainText("1.0");
+            jsonOfstream.plainText("0.1");
             jsonOfstream.comma();
+
             // Bodies
             jsonOfstream.key("people");
             jsonOfstream.arrayOpen();
-            // Ger max numberPeople
-            auto numberPeople = 0;
-            for (auto vectorIndex = 0u ; vectorIndex < keypointVector.size() ; vectorIndex++)
-                numberPeople = fastMax(numberPeople, keypointVector[vectorIndex].first.getSize(0));
             for (auto person = 0 ; person < numberPeople ; person++)
             {
                 jsonOfstream.objectOpen();
-                for (auto vectorIndex = 0u ; vectorIndex < keypointVector.size() ; vectorIndex++)
+                jsonOfstream.key(keypointName);
+                jsonOfstream.arrayOpen();
+                // Body parts
+                for (auto bodyPart = 0 ; bodyPart < numberBodyParts ; bodyPart++)
                 {
-                    const auto& keypoints = keypointVector[vectorIndex].first;
-                    const auto& keypointName = keypointVector[vectorIndex].second;
-                    const auto numberBodyParts = keypoints.getSize(1);
-                    jsonOfstream.key(keypointName);
-                    jsonOfstream.arrayOpen();
-                    // Body parts
-                    for (auto bodyPart = 0 ; bodyPart < numberBodyParts ; bodyPart++)
-                    {
-                        const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
-                        jsonOfstream.plainText(keypoints[finalIndex]);
-                        jsonOfstream.comma();
-                        jsonOfstream.plainText(keypoints[finalIndex+1]);
-                        jsonOfstream.comma();
-                        jsonOfstream.plainText(keypoints[finalIndex+2]);
-                        if (bodyPart < numberBodyParts-1)
-                            jsonOfstream.comma();
-                    }
-                    jsonOfstream.arrayClose();
-                    if (vectorIndex < keypointVector.size()-1)
+                    const auto finalIndex = 3*(person*numberBodyParts + bodyPart);
+                    jsonOfstream.plainText(pose[finalIndex]);
+                    jsonOfstream.comma();
+                    jsonOfstream.plainText(pose[finalIndex+1]);
+                    jsonOfstream.comma();
+                    jsonOfstream.plainText(pose[finalIndex+2]);
+                    if (bodyPart < numberBodyParts-1)
                         jsonOfstream.comma();
                 }
+                jsonOfstream.arrayClose();
                 jsonOfstream.objectClose();
                 if (person < numberPeople-1)
                 {
@@ -206,9 +181,8 @@ namespace op
                     jsonOfstream.enter();
                 }
             }
-            // Close array
             jsonOfstream.arrayClose();
-            // Close object
+
             jsonOfstream.objectClose();
         }
         catch (const std::exception& e)
@@ -242,47 +216,7 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return cv::Mat();
-        }
-    }
-
-    std::vector<std::array<Rectangle<float>, 2>> loadHandDetectorTxt(const std::string& txtFilePath)
-    {
-        try
-        {
-            std::vector<std::array<Rectangle<float>, 2>> handRectangles;
-
-            std::string line;
-            std::ifstream jsonFile{txtFilePath};
-            if (jsonFile.is_open())
-            {
-                while (std::getline(jsonFile, line))
-                {
-                    const auto splittedStrings = splitString(line, " ");
-                    std::vector<float> splittedInts;
-                    for (auto splittedString : splittedStrings)
-                        splittedInts.emplace_back(std::stof(splittedString));
-                    if (splittedInts.size() != 4u)
-                        error("splittedInts.size() != 4, but splittedInts.size() = "
-                              + std::to_string(splittedInts.size()) + ".", __LINE__, __FUNCTION__, __FILE__);
-                    const Rectangle<float> handRectangleZero;
-                    const Rectangle<float> handRectangle{splittedInts[0], splittedInts[1], splittedInts[2], splittedInts[3]};
-                    if (getFileNameNoExtension(txtFilePath).back() == 'l')
-                        handRectangles.emplace_back(std::array<Rectangle<float>, 2>{handRectangle, handRectangleZero});
-                    else
-                        handRectangles.emplace_back(std::array<Rectangle<float>, 2>{handRectangleZero, handRectangle});
-                }
-                jsonFile.close();
-            }
-            else
-                error("Unable to open file " + txtFilePath + ".", __LINE__, __FUNCTION__, __FILE__);
-
-            return handRectangles;
-        }
-        catch (const std::exception& e)
-        {
-            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return {};
+            return cv::Mat{};
         }
     }
 }

@@ -1,31 +1,24 @@
-# ------------------------- BODY, FACE AND HAND MODELS -------------------------
-# Downloading body pose (COCO and MPI), face and hand models
-OPENPOSE_URL="http://posefs1.perception.cs.cmu.edu/OpenPose/models/"
-POSE_FOLDER="pose/"
-FACE_FOLDER="face/"
-HAND_FOLDER="hand/"
+# "------------------------- POSE MODELS -------------------------"
+# Downloading body pose (COCO and MPI) as well as face models
+pose_folder="pose/"
+face_folder="face/"
 
-# ------------------------- POSE MODELS -------------------------
 # Body (COCO)
-COCO_FOLDER=${POSE_FOLDER}"coco/"
-COCO_MODEL=${COCO_FOLDER}"pose_iter_440000.caffemodel"
-wget -c ${OPENPOSE_URL}${COCO_MODEL} -P ${COCO_FOLDER}
-# Alternative: it will not check whether file was fully downloaded
-# if [ ! -f $COCO_MODEL ]; then
-#     wget ${OPENPOSE_URL}$COCO_MODEL -P $COCO_FOLDER
-# fi
+coco_folder="$pose_folder"coco/""
+coco_model="$coco_folder"pose_iter_440000.caffemodel""
+if [ ! -f $coco_model ]; then
+    wget http://posefs1.perception.cs.cmu.edu/OpenPose/models/$coco_model -P $coco_folder
+fi
 
 # Body (MPI)
-MPI_FOLDER=${POSE_FOLDER}"mpi/"
-MPI_MODEL=${MPI_FOLDER}"pose_iter_160000.caffemodel"
-wget -c ${OPENPOSE_URL}${MPI_MODEL} -P ${MPI_FOLDER}
+mpi_folder="$pose_folder"mpi/""
+mpi_model="$mpi_folder"pose_iter_160000.caffemodel""
+if [ ! -f $mpi_model ]; then
+    wget http://posefs1.perception.cs.cmu.edu/OpenPose/models/$mpi_model -P $mpi_folder
+fi
 
-# "------------------------- FACE MODELS -------------------------"
 # Face
-FACE_MODEL=${FACE_FOLDER}"pose_iter_116000.caffemodel"
-wget -c ${OPENPOSE_URL}${FACE_MODEL} -P ${FACE_FOLDER}
-
-# "------------------------- HAND MODELS -------------------------"
-# Hand
-HAND_MODEL=$HAND_FOLDER"pose_iter_102000.caffemodel"
-wget -c ${OPENPOSE_URL}${HAND_MODEL} -P ${HAND_FOLDER}
+face_model="$face_folder"pose_iter_116000.caffemodel""
+if [ ! -f $face_model ]; then
+    wget http://posefs1.perception.cs.cmu.edu/OpenPose/models/$face_model -P $face_folder
+fi

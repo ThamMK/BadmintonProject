@@ -1,12 +1,12 @@
 #ifndef OPENPOSE_FILESTREAM_DATA_SAVER_HPP
 #define OPENPOSE_FILESTREAM_DATA_SAVER_HPP
 
-#include <openpose/core/common.hpp>
+#include <string>
 #include <openpose/utilities/string.hpp>
 
 namespace op
 {
-    class OP_API FileSaver
+    class FileSaver
     {
     protected:
         explicit FileSaver(const std::string& directoryPath);

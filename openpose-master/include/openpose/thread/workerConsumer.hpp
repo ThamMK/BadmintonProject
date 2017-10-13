@@ -1,8 +1,7 @@
 #ifndef OPENPOSE_THREAD_WORKER_CONSUMER_HPP
 #define OPENPOSE_THREAD_WORKER_CONSUMER_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/thread/worker.hpp>
+#include "worker.hpp"
 
 namespace op
 {
@@ -27,6 +26,7 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/macros.hpp>
 namespace op
 {
     template<typename TDatums>

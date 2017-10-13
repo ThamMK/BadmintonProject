@@ -1,7 +1,7 @@
 #ifndef OPENPOSE_WRAPPER_WRAPPER_STRUCT_OUTPUT_HPP
 #define OPENPOSE_WRAPPER_WRAPPER_STRUCT_OUTPUT_HPP
 
-#include <openpose/core/common.hpp>
+#include <string>
 #include <openpose/filestream/enumClasses.hpp>
 
 namespace op
@@ -10,7 +10,7 @@ namespace op
      * WrapperStructOutput: Output (small GUI, writing rendered results and/or pose data, etc.) configuration struct.
      * WrapperStructOutput allows the user to set up the input frames generator.
      */
-    struct OP_API WrapperStructOutput
+    struct WrapperStructOutput
     {
         /**
          * Whether to display the OpenPose small integrated GUI.

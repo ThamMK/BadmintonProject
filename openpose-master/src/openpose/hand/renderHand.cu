@@ -1,4 +1,5 @@
 #include <openpose/hand/handParameters.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/cuda.hpp>
 #include <openpose/utilities/cuda.hu>
 #include <openpose/utilities/render.hu>
@@ -7,7 +8,7 @@
 namespace op
 {
     __constant__ const unsigned int PART_PAIRS_GPU[] = HAND_PAIRS_RENDER_GPU;
-    __constant__ const float COLORS[] = {HAND_COLORS_RENDER_GPU};
+    __constant__ const float COLORS[] = {HAND_COLORS_RENDER};
 
 
 
@@ -37,8 +38,8 @@ namespace op
                         radius, stickwidth, threshold, alphaColorToAdd);
     }
 
-    void renderHandKeypointsGpu(float* framePtr, const Point<int>& frameSize, const float* const handsPtr,
-                                const int numberHands, const float renderThreshold, const float alphaColorToAdd)
+    void renderHandKeypointsGpu(float* framePtr, const Point<int>& frameSize, const float* const handsPtr, const int numberHands,
+                                const float alphaColorToAdd)
     {
         try
         {
@@ -48,7 +49,7 @@ namespace op
                 dim3 numBlocks;
                 std::tie(threadsPerBlock, numBlocks) = getNumberCudaThreadsAndBlocks(frameSize);
                 renderHandsParts<<<threadsPerBlock, numBlocks>>>(framePtr, frameSize.x, frameSize.y, handsPtr,
-                                                                 numberHands, renderThreshold, alphaColorToAdd);
+                                                                 numberHands, HAND_RENDER_THRESHOLD, alphaColorToAdd);
                 cudaCheck(__LINE__, __FUNCTION__, __FILE__);
             }
         }

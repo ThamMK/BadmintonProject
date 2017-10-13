@@ -1,7 +1,7 @@
 #ifndef OPENPOSE_FILESTREAM_W_COCO_JSON_SAVER_HPP
 #define OPENPOSE_FILESTREAM_W_COCO_JSON_SAVER_HPP
 
-#include <openpose/core/common.hpp>
+#include <memory> // std::shared_ptr
 #include <openpose/filestream/cocoJsonSaver.hpp>
 #include <openpose/thread/workerConsumer.hpp>
 
@@ -29,7 +29,10 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
+#include <openpose/utilities/profiler.hpp>
 namespace op
 {
     template<typename TDatums>
@@ -60,7 +63,11 @@ namespace op
                 // T* to T
                 const auto& tDatum = tDatums->at(0);
                 // Record json in COCO format
-                spCocoJsonSaver->record(tDatum.poseKeypoints, tDatum.name);
+                const std::string stringToRemove = "COCO_val2014_";
+                const auto stringToRemoveEnd = tDatum.name.find(stringToRemove) + stringToRemove.size();
+                const auto imageId = std::stoull(tDatum.name.substr(stringToRemoveEnd, tDatum.name.size() - stringToRemoveEnd));
+                // Record json in COCO format if file within desired range of images
+                spCocoJsonSaver->record(tDatum.poseKeypoints, imageId);
                 // Profiling speed
                 Profiler::timerEnd(profilerKey);
                 Profiler::printAveragedTimeMsOnIterationX(profilerKey, __LINE__, __FUNCTION__, __FILE__, Profiler::DEFAULT_X);

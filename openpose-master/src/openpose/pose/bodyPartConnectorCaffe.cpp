@@ -1,5 +1,7 @@
 #ifdef USE_CAFFE
 #include <openpose/pose/bodyPartConnectorBase.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/pose/bodyPartConnectorCaffe.hpp>
 
 namespace op

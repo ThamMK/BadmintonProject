@@ -2,16 +2,19 @@
 #ifndef OPENPOSE_POSE_BODY_PART_CONNECTOR_CAFFE_HPP
 #define OPENPOSE_POSE_BODY_PART_CONNECTOR_CAFFE_HPP
 
+#include <array>
 #include <caffe/blob.hpp>
-#include <openpose/core/common.hpp>
-#include <openpose/pose/enumClasses.hpp>
+#include <openpose/core/array.hpp>
+#include <openpose/core/point.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "enumClasses.hpp"
 
 namespace op
 {
     // It mostly follows the Caffe::layer implementation, so Caffe users can easily use it. However, in order to keep the compatibility with any generic Caffe version,
     // we keep this 'layer' inside our library rather than in the Caffe code.
     template <typename T>
-    class OP_API BodyPartConnectorCaffe
+    class BodyPartConnectorCaffe
     {
     public:
         explicit BodyPartConnectorCaffe();

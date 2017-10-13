@@ -1,9 +1,9 @@
 #ifndef OPENPOSE_HAND_W_HAND_EXTRACTOR_HPP
 #define OPENPOSE_HAND_W_HAND_EXTRACTOR_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/hand/handRenderer.hpp>
+#include <memory> // std::shared_ptr
 #include <openpose/thread/worker.hpp>
+#include "handRenderer.hpp"
 
 namespace op
 {
@@ -29,7 +29,10 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
+#include <openpose/utilities/profiler.hpp>
 namespace op
 {
     template<typename TDatums>
@@ -59,11 +62,7 @@ namespace op
                 for (auto& tDatum : *tDatums)
                 {
                     spHandExtractor->forwardPass(tDatum.handRectangles, tDatum.cvInputData, tDatum.scaleInputToOutput);
-                    for (auto hand = 0 ; hand < 2 ; hand++)
-                    {
-                        tDatum.handHeatMaps[hand] = spHandExtractor->getHeatMaps()[hand].clone();
-                        tDatum.handKeypoints[hand] = spHandExtractor->getHandKeypoints()[hand].clone();
-                    }
+                    tDatum.handKeypoints = spHandExtractor->getHandKeypoints();
                 }
                 // Profiling speed
                 Profiler::timerEnd(profilerKey);

@@ -1,7 +1,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range_core.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fileSystem.hpp>
-#include <openpose/utilities/string.hpp>
 
 namespace op
 {
@@ -135,9 +135,9 @@ namespace op
     {
         try
         {
-            const auto cleanedExtension = toLower(removeExtensionDot(extension));
+            const auto cleanedExtension = removeExtensionDot(extension);
             for (auto& extensionI : extensions)
-                if (cleanedExtension == toLower(removeExtensionDot(extensionI)))
+                if (cleanedExtension == removeExtensionDot(extensionI))
                     return true;
             return false;
         }

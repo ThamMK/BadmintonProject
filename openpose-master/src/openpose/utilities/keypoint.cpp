@@ -1,5 +1,6 @@
 #include <limits> // std::numeric_limits
 #include <opencv2/imgproc/imgproc.hpp> // cv::line, cv::circle
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/keypoint.hpp>
 
@@ -7,11 +8,10 @@ namespace op
 {
     const std::string errorMessage = "The Array<float> is not a RGB image. This function is only for array of dimension: [sizeA x sizeB x 3].";
 
-    float getDistance(const Array<float>& keypoints, const int person, const int elementA, const int elementB)
+    float getDistance(const float* keypointPtr, const int elementA, const int elementB)
     {
         try
         {
-            const auto keypointPtr = keypoints.getConstPtr() + person * keypoints.getSize(1) * keypoints.getSize(2);
             const auto pixelX = keypointPtr[elementA*3] - keypointPtr[elementB*3];
             const auto pixelY = keypointPtr[elementA*3+1] - keypointPtr[elementB*3+1];
             return std::sqrt(pixelX*pixelX+pixelY*pixelY);
@@ -20,36 +20,6 @@ namespace op
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
             return -1.f;
-        }
-    }
-
-    void averageKeypoints(Array<float>& keypointsA, const Array<float>& keypointsB, const int personA)
-    {
-        try
-        {
-            // Security checks
-            if (keypointsA.getNumberDimensions() != keypointsB.getNumberDimensions())
-                error("keypointsA.getNumberDimensions() != keypointsB.getNumberDimensions().", __LINE__, __FUNCTION__, __FILE__);
-            for (auto dimension = 1u ; dimension < keypointsA.getNumberDimensions() ; dimension++)
-                if (keypointsA.getSize(dimension) != keypointsB.getSize(dimension))
-                    error("keypointsA.getSize() != keypointsB.getSize().", __LINE__, __FUNCTION__, __FILE__);
-            // For each body part
-            const auto numberParts = keypointsA.getSize(1);
-            for (auto part = 0 ; part < numberParts ; part++)
-            {
-                const auto finalIndexA = keypointsA.getSize(2)*(personA*numberParts + part);
-                const auto finalIndexB = keypointsA.getSize(2)*part;
-                if (keypointsB[finalIndexB+2] - keypointsA[finalIndexA+2] > 0.05f)
-                {
-                    keypointsA[finalIndexA] = keypointsB[finalIndexB];
-                    keypointsA[finalIndexA+1] = keypointsB[finalIndexB+1];
-                    keypointsA[finalIndexA+2] = keypointsB[finalIndexB+2];
-                }
-            }
-        }
-        catch (const std::exception& e)
-        {
-            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
         }
     }
 
@@ -146,9 +116,9 @@ namespace op
                 const auto width = frame.size[2];
                 const auto height = frame.size[1];
                 const auto area = width * height;
-                cv::Mat frameB(height, width, CV_32FC1, &frame.data[0]);
-                cv::Mat frameG(height, width, CV_32FC1, &frame.data[area * sizeof(float) / sizeof(uchar)]);
-                cv::Mat frameR(height, width, CV_32FC1, &frame.data[2 * area * sizeof(float) / sizeof(uchar)]);
+                cv::Mat frameB{height, width, CV_32FC1, &frame.data[0]};
+                cv::Mat frameG{height, width, CV_32FC1, &frame.data[area * sizeof(float) / sizeof(uchar)]};
+                cv::Mat frameR{height, width, CV_32FC1, &frame.data[2 * area * sizeof(float) / sizeof(uchar)]};
 
                 // Parameters
                 const auto lineType = 8;
@@ -156,11 +126,12 @@ namespace op
                 const auto numberColors = colors.size();
                 const auto thresholdRectangle = 0.1f;
                 const auto numberKeypoints = keypoints.getSize(1);
+                const auto areaKeypoints = numberKeypoints * keypoints.getSize(2);
 
                 // Keypoints
                 for (auto person = 0 ; person < keypoints.getSize(0) ; person++)
                 {
-                    const auto personRectangle = getKeypointsRectangle(keypoints, person, numberKeypoints, thresholdRectangle);
+                    const auto personRectangle = getKeypointsRectangle(&keypoints[person*areaKeypoints], numberKeypoints, thresholdRectangle);
                     if (personRectangle.area() > 0)
                     {
                         const auto ratioAreas = fastMin(1.f, fastMax(personRectangle.width/(float)width, personRectangle.height/(float)height));
@@ -172,13 +143,13 @@ namespace op
                         const auto radius = thicknessRatio / 2;
 
                         // Draw lines
-                        for (auto pair = 0u ; pair < pairs.size() ; pair+=2)
+                        for (auto pair = 0 ; pair < pairs.size() ; pair+=2)
                         {
                             const auto index1 = (person * numberKeypoints + pairs[pair]) * keypoints.getSize(2);
                             const auto index2 = (person * numberKeypoints + pairs[pair+1]) * keypoints.getSize(2);
                             if (keypoints[index1+2] > threshold && keypoints[index2+2] > threshold)
                             {
-                                const auto colorIndex = pairs[pair+1]*3; // Before: colorIndex = pair/2*3;
+                                const auto colorIndex = pair/2*3;
                                 const cv::Scalar color{colors[colorIndex % numberColors],
                                                        colors[(colorIndex+1) % numberColors],
                                                        colors[(colorIndex+2) % numberColors]};
@@ -216,15 +187,13 @@ namespace op
         }
     }
 
-    Rectangle<float> getKeypointsRectangle(const Array<float>& keypoints, const int person, const int numberKeypoints, const float threshold)
+    Rectangle<float> getKeypointsRectangle(const float* keypointPtr, const int numberKeypoints, const float threshold)
     {
         try
         {
-            // Security checks
             if (numberKeypoints < 1)
                 error("Number body parts must be > 0", __LINE__, __FUNCTION__, __FILE__);
-            // Define keypointPtr
-            const auto keypointPtr = keypoints.getConstPtr() + person * keypoints.getSize(1) * keypoints.getSize(2);
+
             float minX = std::numeric_limits<float>::max();
             float maxX = 0.f;
             float minY = minX;
@@ -260,35 +229,11 @@ namespace op
         }
     }
 
-    float getAverageScore(const Array<float>& keypoints, const int person)
+    float getKeypointsArea(const float* keypointPtr, const int numberKeypoints, const float threshold)
     {
         try
         {
-            // Security checks
-            if (person >= keypoints.getSize(0))
-                error("Person index out of bounds.", __LINE__, __FUNCTION__, __FILE__);
-            // Get average score
-            auto score = 0.f;
-            const auto numberKeypoints = keypoints.getSize(1);
-            const auto area = numberKeypoints * keypoints.getSize(2);
-            const auto personOffset = person * area;
-            for (auto part = 0 ; part < numberKeypoints ; part++)
-                score += keypoints[personOffset + part*keypoints.getSize(2) + 2];
-            return score / numberKeypoints;
-        }
-        catch (const std::exception& e)
-        {
-            error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return 0.f;
-        }
-    }
-
-    float getKeypointsArea(const Array<float>& keypoints, const int person, const int numberKeypoints,
-                           const float threshold)
-    {
-        try
-        {
-            return getKeypointsRectangle(keypoints, person, numberKeypoints, threshold).area();
+            return getKeypointsRectangle(keypointPtr, numberKeypoints, threshold).area();
         }
         catch (const std::exception& e)
         {
@@ -305,11 +250,12 @@ namespace op
             {
                 const auto numberPeople = keypoints.getSize(0);
                 const auto numberKeypoints = keypoints.getSize(1);
+                const auto area = numberKeypoints * keypoints.getSize(2);
                 auto biggestPoseIndex = -1;
                 auto biggestArea = -1.f;
                 for (auto person = 0 ; person < numberPeople ; person++)
                 {
-                    const auto newPersonArea = getKeypointsArea(keypoints, person, numberKeypoints, threshold);
+                    const auto newPersonArea = getKeypointsArea(&keypoints[person*area], numberKeypoints, threshold);
                     if (newPersonArea > biggestArea)
                     {
                         biggestArea = newPersonArea;

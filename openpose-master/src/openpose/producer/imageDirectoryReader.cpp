@@ -1,4 +1,5 @@
 #include <openpose/filestream/fileStream.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/fileSystem.hpp>
 #include <openpose/producer/imageDirectoryReader.hpp>
@@ -10,8 +11,8 @@ namespace op
         try
         {
             // Get files on directory with the desired extensions
-            const std::vector<std::string> extensions{"bmp", "dib", "pbm", "pgm", "ppm", "sr", "ras",   // Completely supported by OpenCV
-                                                      "jpg", "jpeg", "png"};                            // Most of them supported by OpenCV
+            const std::vector<std::string> extensions{".bmp", ".dib", ".pbm", ".pgm", ".ppm", ".sr", ".ras",     // Completely supported by OpenCV
+                                                      ".jpg", "jpeg", ".png"};                                   // Most of them supported by OpenCV
             const auto imagePaths = getFilesOnDirectory(imageDirectoryPath, extensions);
 
             // Check #files > 0
@@ -54,7 +55,7 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return cv::Mat();
+            return cv::Mat{};
         }
     }
 

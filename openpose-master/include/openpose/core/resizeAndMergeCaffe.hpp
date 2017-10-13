@@ -2,8 +2,10 @@
 #ifndef OPENPOSE_CORE_RESIZE_AND_MERGE_CAFFE_HPP
 #define OPENPOSE_CORE_RESIZE_AND_MERGE_CAFFE_HPP
 
+#include <array>
+#include <vector>
 #include <caffe/blob.hpp>
-#include <openpose/core/common.hpp>
+#include <openpose/utilities/macros.hpp>
 
 namespace op
 {
@@ -11,7 +13,7 @@ namespace op
     // compatibility with any generic Caffe version,
     // we keep this 'layer' inside our library rather than in the Caffe code.
     template <typename T>
-    class OP_API ResizeAndMergeCaffe
+    class ResizeAndMergeCaffe
     {
     public:
         explicit ResizeAndMergeCaffe();

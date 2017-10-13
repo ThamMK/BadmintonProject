@@ -3,19 +3,22 @@
 
 #include <queue>
 #include <opencv2/core/core.hpp> // cv::Mat
-#include <openpose/core/common.hpp>
+#include <openpose/core/array.hpp>
+#include <openpose/core/point.hpp>
 
 namespace op
 {
-    class OP_API GuiInfoAdder
+    class GuiInfoAdder
     {
     public:
-        GuiInfoAdder(const int numberGpus, const bool guiEnabled = false);
+        GuiInfoAdder(const Point<int>& outputSize, const int numberGpus, const bool guiEnabled = false);
 
         void addInfo(cv::Mat& cvOutputData, const Array<float>& poseKeypoints, const unsigned long long id, const std::string& elementRenderedName);
 
     private:
         // Const variables
+        const Point<int> mOutputSize;
+        const int mBorderMargin;
         const int mNumberGpus;
         const bool mGuiEnabled;
         // Other variables

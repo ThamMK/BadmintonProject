@@ -1,45 +1,46 @@
 #ifndef OPENPOSE_FACE_FACE_EXTRACTOR_HPP
 #define OPENPOSE_FACE_FACE_EXTRACTOR_HPP
 
+#include <array>
 #include <atomic>
+#include <memory> // std::shared_ptr
 #include <thread>
 #include <opencv2/core/core.hpp> // cv::Mat
-#include <openpose/core/common.hpp>
-#include <openpose/core/maximumCaffe.hpp>
+#include <openpose/core/array.hpp>
 #include <openpose/core/net.hpp>
+#include <openpose/core/nmsCaffe.hpp>
+#include <openpose/core/rectangle.hpp>
 #include <openpose/core/resizeAndMergeCaffe.hpp>
-#include <openpose/core/enumClasses.hpp>
+#include "enumClasses.hpp"
 
 namespace op
 {
-    class OP_API FaceExtractor
+    class FaceExtractor
     {
     public:
-        explicit FaceExtractor(const Point<int>& netInputSize, const Point<int>& netOutputSize,
-                               const std::string& modelFolder, const int gpuId,
-                               const std::vector<HeatMapType>& heatMapTypes = {},
-                               const ScaleMode heatMapScale = ScaleMode::ZeroToOne);
+        explicit FaceExtractor(const Point<int>& netInputSize, const Point<int>& netOutputSize, const std::string& modelFolder, const int gpuId);
 
         void initializationOnThread();
 
-        void forwardPass(const std::vector<Rectangle<float>>& faceRectangles, const cv::Mat& cvInputData,
-                         const float scaleInputToOutput);
+        void forwardPass(const std::vector<Rectangle<float>>& faceRectangles, const cv::Mat& cvInputData, const float scaleInputToOutput);
 
         Array<float> getFaceKeypoints() const;
 
-        Array<float> getHeatMaps() const;
+        double get(const FaceProperty property) const;
+
+        void set(const FaceProperty property, const double value);
+
+        void increase(const FaceProperty property, const double value);
 
     private:
         const Point<int> mNetOutputSize;
+        const Point<int> mOutputSize;
+        std::array<std::atomic<double>, (int)FaceProperty::Size> mProperties;
         std::shared_ptr<Net> spNet;
         std::shared_ptr<ResizeAndMergeCaffe<float>> spResizeAndMergeCaffe;
-        std::shared_ptr<MaximumCaffe<float>> spMaximumCaffe;
+        std::shared_ptr<NmsCaffe<float>> spNmsCaffe;
         Array<float> mFaceImageCrop;
         Array<float> mFaceKeypoints;
-        // HeatMaps parameters
-        const ScaleMode mHeatMapScaleMode;
-        const std::vector<HeatMapType> mHeatMapTypes;
-        Array<float> mHeatMaps;
         // Init with thread
         boost::shared_ptr<caffe::Blob<float>> spCaffeNetOutputBlob;
         std::shared_ptr<caffe::Blob<float>> spHeatMapsBlob;

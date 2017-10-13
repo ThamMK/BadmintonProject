@@ -1,12 +1,16 @@
 #ifndef OPENPOSE_FACE_FACE_DETECTOR_HPP
 #define OPENPOSE_FACE_FACE_DETECTOR_HPP
 
-#include <openpose/core/common.hpp>
+#include <vector>
+#include <openpose/core/array.hpp>
+#include <openpose/core/rectangle.hpp>
 #include <openpose/pose/enumClasses.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "enumClasses.hpp"
 
 namespace op
 {
-    class OP_API FaceDetector
+    class FaceDetector
     {
     public:
         explicit FaceDetector(const PoseModel poseModel);

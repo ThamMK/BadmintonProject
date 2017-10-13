@@ -1,10 +1,11 @@
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fileSystem.hpp>
 #include <openpose/producer/videoReader.hpp>
 
 namespace op
 {
     VideoReader::VideoReader(const std::string & videoPath) :
-        VideoCaptureReader{videoPath, ProducerType::Video},
+        VideoCaptureReader{videoPath},
         mPathName{getFileNameNoExtension(videoPath)}
     {
     }
@@ -31,7 +32,7 @@ namespace op
         catch (const std::exception& e)
         {
             error(e.what(), __LINE__, __FUNCTION__, __FILE__);
-            return cv::Mat();
+            return cv::Mat{};
         }
     }
 }

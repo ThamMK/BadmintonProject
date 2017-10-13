@@ -1,5 +1,6 @@
 #include <openpose/pose/poseParameters.hpp>
 #include <openpose/utilities/check.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/keypoint.hpp>
 #include <openpose/face/faceDetector.hpp>
  
@@ -40,7 +41,7 @@ namespace op
                 {
                     pointTopLeft.x = posePtr[headNose*3];
                     pointTopLeft.y = posePtr[headNose*3+1];
-                    faceSize = 1.33f * getDistance(poseKeypoints, personIndex, neck, headNose);
+                    faceSize = 1.33f * getDistance(posePtr, neck, headNose);
                 }
             }
             // Face as average between different body keypoints (e.g. COCO)
@@ -58,13 +59,13 @@ namespace op
                         {
                             pointTopLeft.x += (posePtr[lEye*3] + posePtr[lEar*3] + posePtr[headNose*3]) / 3.f;
                             pointTopLeft.y += (posePtr[lEye*3+1] + posePtr[lEar*3+1] + posePtr[headNose*3+1]) / 3.f;
-                            faceSize += 0.85f * (getDistance(poseKeypoints, personIndex, headNose, lEye) + getDistance(poseKeypoints, personIndex, headNose, lEar) + getDistance(poseKeypoints, personIndex, neck, headNose));
+                            faceSize += 0.85f * (getDistance(posePtr, headNose, lEye) + getDistance(posePtr, headNose, lEar) + getDistance(posePtr, neck, headNose));
                         }
                         else // if(lEyeScoreAbove)
                         {
                             pointTopLeft.x += (posePtr[rEye*3] + posePtr[rEar*3] + posePtr[headNose*3]) / 3.f;
                             pointTopLeft.y += (posePtr[rEye*3+1] + posePtr[rEar*3+1] + posePtr[headNose*3+1]) / 3.f;
-                            faceSize += 0.85f * (getDistance(poseKeypoints, personIndex, headNose, rEye) + getDistance(poseKeypoints, personIndex, headNose, rEar) + getDistance(poseKeypoints, personIndex, neck, headNose));
+                            faceSize += 0.85f * (getDistance(posePtr, headNose, rEye) + getDistance(posePtr, headNose, rEar) + getDistance(posePtr, neck, headNose));
                         }
                     }
                     // else --> 2 * dist(neck, headNose)
@@ -72,7 +73,7 @@ namespace op
                     {
                         pointTopLeft.x += (posePtr[neck*3] + posePtr[headNose*3]) / 2.f;
                         pointTopLeft.y += (posePtr[neck*3+1] + posePtr[headNose*3+1]) / 2.f;
-                        faceSize += 2.f * getDistance(poseKeypoints, personIndex, neck, headNose);
+                        faceSize += 2.f * getDistance(posePtr, neck, headNose);
                     }
                     counter++;
                 }
@@ -81,7 +82,7 @@ namespace op
                 {
                     pointTopLeft.x += (posePtr[lEye*3] + posePtr[rEye*3]) / 2.f;
                     pointTopLeft.y += (posePtr[lEye*3+1] + posePtr[rEye*3+1]) / 2.f;
-                    faceSize += 3.f * getDistance(poseKeypoints, personIndex, lEye, rEye);
+                    faceSize += 3.f * getDistance(posePtr, lEye, rEye);
                     counter++;
                 }
                 // 2 * dist(lEar, rEar)
@@ -89,7 +90,7 @@ namespace op
                 {
                     pointTopLeft.x += (posePtr[lEar*3] + posePtr[rEar*3]) / 2.f;
                     pointTopLeft.y += (posePtr[lEar*3+1] + posePtr[rEar*3+1]) / 2.f;
-                    faceSize += 2.f * getDistance(poseKeypoints, personIndex, lEar, rEar);
+                    faceSize += 2.f * getDistance(posePtr, lEar, rEar);
                     counter++;
                 }
                 // Average (if counter > 0)

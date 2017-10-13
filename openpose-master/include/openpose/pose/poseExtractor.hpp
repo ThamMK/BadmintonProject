@@ -1,15 +1,18 @@
 #ifndef OPENPOSE_POSE_POSE_EXTRACTOR_HPP
 #define OPENPOSE_POSE_POSE_EXTRACTOR_HPP
 
+#include <array>
 #include <atomic>
 #include <thread>
-#include <openpose/core/common.hpp>
+#include <openpose/core/array.hpp>
+#include <openpose/core/point.hpp>
 #include <openpose/core/enumClasses.hpp>
-#include <openpose/pose/poseParameters.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "poseParameters.hpp"
 
 namespace op
 {
-    class OP_API PoseExtractor
+    class PoseExtractor
     {
     public:
         PoseExtractor(const Point<int>& netOutputSize, const Point<int>& outputSize, const PoseModel poseModel, const std::vector<HeatMapType>& heatMapTypes = {},

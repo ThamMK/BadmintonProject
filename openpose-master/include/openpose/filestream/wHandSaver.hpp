@@ -1,10 +1,11 @@
 #ifndef OPENPOSE_FILESTREAM_W_HAND_SAVER_HPP
 #define OPENPOSE_FILESTREAM_W_HAND_SAVER_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/filestream/enumClasses.hpp>
-#include <openpose/filestream/keypointSaver.hpp>
+#include <memory> // std::shared_ptr
+#include <string>
 #include <openpose/thread/workerConsumer.hpp>
+#include "enumClasses.hpp"
+#include "keypointSaver.hpp"
 
 namespace op
 {
@@ -30,7 +31,10 @@ namespace op
 
 
 // Implementation
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
+#include <openpose/utilities/profiler.hpp>
 namespace op
 {
     template<typename TDatums>
@@ -61,11 +65,11 @@ namespace op
                 const auto fileName = (!tDatumsNoPtr[0].name.empty() ? tDatumsNoPtr[0].name : std::to_string(tDatumsNoPtr[0].id));
                 std::vector<Array<float>> keypointVector(tDatumsNoPtr.size());
                 // Left hand
-                for (auto i = 0u; i < tDatumsNoPtr.size(); i++)
+                for (auto i = 0; i < tDatumsNoPtr.size(); i++)
                     keypointVector[i] = tDatumsNoPtr[i].handKeypoints[0];
                 spKeypointSaver->saveKeypoints(keypointVector, fileName, "hand_left");
                 // Right hand
-                for (auto i = 0u; i < tDatumsNoPtr.size(); i++)
+                for (auto i = 0; i < tDatumsNoPtr.size(); i++)
                     keypointVector[i] = tDatumsNoPtr[i].handKeypoints[1];
                 spKeypointSaver->saveKeypoints(keypointVector, fileName, "hand_right");
                 // Profiling speed

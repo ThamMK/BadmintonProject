@@ -1,12 +1,14 @@
 #ifndef OPENPOSE_CORE_KEYPOINT_SCALER_HPP
 #define OPENPOSE_CORE_KEYPOINT_SCALER_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/core/enumClasses.hpp>
+#include <vector>
+#include "array.hpp"
+#include "point.hpp"
+#include "enumClasses.hpp"
 
 namespace op
 {
-    class OP_API KeypointScaler
+    class KeypointScaler
     {
     public:
         explicit KeypointScaler(const ScaleMode scaleMode);

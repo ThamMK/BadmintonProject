@@ -27,11 +27,11 @@
 // Note: This command will show you flags for other unnecessary 3rdparty files. Check only the flags for the OpenPose
 // executable. E.g. for `openpose.bin`, look for `Flags from examples/openpose/openpose.cpp:`.
 // Debugging
-DEFINE_int32(logging_level,             3,              "The logging level. Integer in the range [0, 255]. 0 will output any log() message, while"
+DEFINE_int32(logging_level,             4,              "The logging level. Integer in the range [0, 255]. 0 will output any log() message, while"
                                                         " 255 will not output any. Current OpenPose library messages are in the range 0-4: 1 for"
                                                         " low priority messages and 4 for important ones.");
 // Producer
-DEFINE_string(image_dir,                "examples/media/",      "Process a directory of images. Read all standard formats (jpg, png, bmp, etc.).");
+DEFINE_string(image_dir,                "examples/media/",      "Process a directory of images.");
 // Consumer
 DEFINE_bool(fullscreen,                 false,          "Run in full-screen mode (press f during runtime to toggle).");
 
@@ -229,7 +229,7 @@ int openPoseTutorialThread4()
 
     // ------------------------- CLOSING -------------------------
     // Logging information message
-    op::log("Example 4 successfully finished.", op::Priority::High);
+    op::log("Example 3 successfully finished.", op::Priority::High);
     // Return successful message
     return 0;
 }

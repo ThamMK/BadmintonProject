@@ -2,9 +2,8 @@
 #define OPENPOSE_THREAD_W_QUEUE_ORDERER_HPP
 
 #include <queue> // std::priority_queue
-#include <openpose/core/common.hpp>
-#include <openpose/thread/worker.hpp>
 #include <openpose/utilities/pointerContainer.hpp>
+#include "worker.hpp"
 
 namespace op
 {
@@ -12,7 +11,7 @@ namespace op
     class WQueueOrderer : public Worker<TDatums>
     {
     public:
-        explicit WQueueOrderer(const unsigned int maxBufferSize = 64u);
+        explicit WQueueOrderer(const int maxBufferSize = 64);
 
         void initializationOnThread();
 
@@ -21,7 +20,7 @@ namespace op
         void tryStop();
 
     private:
-        const unsigned int mMaxBufferSize;
+        const int mMaxBufferSize;
         bool mStopWhenEmpty;
         unsigned long long mNextExpectedId;
         std::priority_queue<TDatums, std::vector<TDatums>, PointerContainerGreater<TDatums>> mPriorityQueueBuffer;
@@ -37,10 +36,13 @@ namespace op
 // Implementation
 #include <chrono>
 #include <thread>
+#include <openpose/utilities/errorAndLog.hpp>
+#include <openpose/utilities/macros.hpp>
+#include <openpose/utilities/profiler.hpp>
 namespace op
 {
     template<typename TDatums>
-    WQueueOrderer<TDatums>::WQueueOrderer(const unsigned int maxBufferSize) :
+    WQueueOrderer<TDatums>::WQueueOrderer(const int maxBufferSize) :
         mMaxBufferSize{maxBufferSize},
         mStopWhenEmpty{false},
         mNextExpectedId{0}
@@ -99,7 +101,7 @@ namespace op
                 mNextExpectedId = tDatumsNoPtr[0].id + 1;
             }
             // Sleep if no new tDatums to either pop
-            if (!checkNoNullNorEmpty(tDatums) && mPriorityQueueBuffer.size() < mMaxBufferSize / 2u)
+            if (!checkNoNullNorEmpty(tDatums) && mPriorityQueueBuffer.size() < mMaxBufferSize / 2)
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
             // If TDatum popped and/or pushed
             if (profileSpeed || tDatums != nullptr)

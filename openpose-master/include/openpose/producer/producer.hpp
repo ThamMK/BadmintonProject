@@ -1,11 +1,12 @@
 #ifndef OPENPOSE_PRODUCER_PRODUCER_HPP
 #define OPENPOSE_PRODUCER_PRODUCER_HPP
 
+#include <array>
 #include <chrono>
 #include <opencv2/core/core.hpp> // cv::Mat
 #include <opencv2/highgui/highgui.hpp> // capProperties of OpenCV
-#include <openpose/core/common.hpp>
-#include <openpose/producer/enumClasses.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "enumClasses.hpp"
 
 namespace op
 {
@@ -13,7 +14,7 @@ namespace op
      * Producer is an abstract class to extract frames from a source (image directory, video file,
      * webcam stream, etc.). It has the basic and common functions (e.g. getFrame, release & isOpened).
      */
-    class OP_API Producer
+    class Producer
     {
     public:
         /**

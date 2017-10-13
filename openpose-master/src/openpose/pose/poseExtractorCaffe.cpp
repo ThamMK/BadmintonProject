@@ -3,6 +3,7 @@
 #include <openpose/pose/poseParameters.hpp>
 #include <openpose/utilities/check.hpp>
 #include <openpose/utilities/cuda.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/utilities/fastMath.hpp>
 #include <openpose/utilities/openCv.hpp>
 #include <openpose/pose/poseExtractorCaffe.hpp>
@@ -26,8 +27,6 @@ namespace op
             const auto resizeScaleCheck = resizeScale / (mNetOutputSize.y/(float)netInputSize.y);
             if (1+1e-6 < resizeScaleCheck || resizeScaleCheck < 1-1e-6)
                 error("Net input and output size must be proportional. resizeScaleCheck = " + std::to_string(resizeScaleCheck), __LINE__, __FUNCTION__, __FILE__);
-            // Layers parameters
-            spBodyPartConnectorCaffe->setPoseModel(mPoseModel);
         }
         catch (const std::exception& e)
         {
@@ -57,11 +56,12 @@ namespace op
 
             // Pose extractor blob and layer
             spPeaksBlob = {std::make_shared<caffe::Blob<float>>(1,1,1,1)};
-            spNmsCaffe->Reshape({spHeatMapsBlob.get()}, {spPeaksBlob.get()}, POSE_MAX_PEAKS[(int)mPoseModel]);
+            spNmsCaffe->Reshape({spHeatMapsBlob.get()}, {spPeaksBlob.get()}, POSE_MAX_PEAKS[(int)mPoseModel], POSE_NUMBER_BODY_PARTS[(int)mPoseModel]);
             cudaCheck(__LINE__, __FUNCTION__, __FILE__);
 
             // Pose extractor blob and layer
             spPoseBlob = {std::make_shared<caffe::Blob<float>>(1,1,1,1)};
+            spBodyPartConnectorCaffe->setPoseModel(mPoseModel);
             spBodyPartConnectorCaffe->Reshape({spHeatMapsBlob.get(), spPeaksBlob.get()}, {spPoseBlob.get()});
             cudaCheck(__LINE__, __FUNCTION__, __FILE__);
 
@@ -105,10 +105,7 @@ namespace op
             // Get scale net to output
             const auto scaleProducerToNetInput = resizeGetScaleFactor(inputDataSize, mNetOutputSize);
             const Point<int> netSize{intRound(scaleProducerToNetInput*inputDataSize.x), intRound(scaleProducerToNetInput*inputDataSize.y)};
-            if (mOutputSize.x > 0 && mOutputSize.y > 0)
-                mScaleNetToOutput = {(float)resizeGetScaleFactor(netSize, mOutputSize)};
-            else
-                mScaleNetToOutput = {(float)resizeGetScaleFactor(netSize, inputDataSize)};
+            mScaleNetToOutput = {(float)resizeGetScaleFactor(netSize, mOutputSize)};
 
             // 4. Connecting body parts
             spBodyPartConnectorCaffe->setScaleNetToOutput(mScaleNetToOutput);

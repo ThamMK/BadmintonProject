@@ -1,8 +1,10 @@
 #ifndef OPENPOSE_PRODUCER_IMAGE_DIRECTORY_READER_HPP
 #define OPENPOSE_PRODUCER_IMAGE_DIRECTORY_READER_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/producer/producer.hpp>
+#include <string>
+#include <vector>
+#include <openpose/core/point.hpp>
+#include "producer.hpp"
 
 namespace op
 {
@@ -11,7 +13,7 @@ namespace op
      * cv::VideoCapture class, so it can be used quite similarly to the cv::VideoCapture class. Thus,
      * it is quite similar to VideoReader and WebcamReader.
      */
-    class OP_API ImageDirectoryReader : public Producer
+    class ImageDirectoryReader : public Producer
     {
     public:
         /**

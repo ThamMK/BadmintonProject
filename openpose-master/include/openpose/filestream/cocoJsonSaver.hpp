@@ -1,15 +1,17 @@
 #ifndef OPENPOSE_FILESTREAM_POSE_JSON_COCO_SAVER_HPP
 #define OPENPOSE_FILESTREAM_POSE_JSON_COCO_SAVER_HPP
 
-#include <openpose/core/common.hpp>
-#include <openpose/filestream/jsonOfstream.hpp>
+#include <string>
+#include <openpose/core/array.hpp>
+#include <openpose/utilities/macros.hpp>
+#include "jsonOfstream.hpp"
 
 namespace op
 {
     /**
      *  The CocoJsonSaver class creates a COCO validation json file with details about the processed images. It inherits from Recorder.
      */
-    class OP_API CocoJsonSaver
+    class CocoJsonSaver
     {
     public:
         /**
@@ -20,7 +22,7 @@ namespace op
 
         ~CocoJsonSaver();
 
-        void record(const Array<float>& poseKeypoints, const std::string& imageName);
+        void record(const Array<float>& poseKeypoints, const unsigned long long imageId);
 
     private:
         JsonOfstream mJsonOfstream;

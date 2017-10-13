@@ -1,6 +1,7 @@
 #ifdef USE_CAFFE
 #include <numeric> // std::accumulate
 #include <openpose/utilities/cuda.hpp>
+#include <openpose/utilities/errorAndLog.hpp>
 #include <openpose/core/netCaffe.hpp>
 
 namespace op

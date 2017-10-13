@@ -1,7 +1,7 @@
 #ifndef OPENPOSE_WRAPPER_WRAPPER_STRUCT_INPUT_HPP
 #define OPENPOSE_WRAPPER_WRAPPER_STRUCT_INPUT_HPP
 
-#include <openpose/core/common.hpp>
+#include <memory>
 #include <openpose/producer/producer.hpp>
 
 namespace op
@@ -10,7 +10,7 @@ namespace op
      * WrapperStructInput: Input (images, video, webcam, etc.) configuration struct.
      * WrapperStructInput allows the user to set up the input frames generator.
      */
-    struct OP_API WrapperStructInput
+    struct WrapperStructInput
     {
         /**
          * Producer which will generate the frames.

@@ -2,7 +2,7 @@
 #define OPENPOSE_CORE_RECTANGLE_HPP
 
 #include <string>
-#include <openpose/core/point.hpp>
+#include "point.hpp"
 
 namespace op
 {
@@ -62,8 +62,6 @@ namespace op
             return width * height;
         }
 
-        void recenter(const T newWidth, const T newHeight);
-
         /**
          * It returns a string with the whole Rectangle<T> data. Useful for debugging.
          * The format is: `[x, y, width, height]`
@@ -80,10 +78,6 @@ namespace op
 
         Rectangle<T> operator/(const T value) const;
     };
-
-    // Static methods
-    template<typename T>
-    Rectangle<T> recenter(const Rectangle<T>& rectangle, const T newWidth, const T newHeight);
 }
 
 #endif // OPENPOSE_CORE_RECTANGLE_HPP

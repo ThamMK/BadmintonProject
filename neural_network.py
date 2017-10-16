@@ -17,11 +17,11 @@ def plot_predictions(strokes_percentage):
     figure, ax = plt.subplots()
 
     bar_width = 0.50
-    bar0 = plt.bar(0, strokes_percentage[0], bar_width)
-    bar1 = plt.bar(1, strokes_percentage[1], bar_width)
-    bar2 = plt.bar(2, strokes_percentage[2], bar_width)
-    bar3 = plt.bar(3, strokes_percentage[3], bar_width)
-    bar4 = plt.bar(4, strokes_percentage[4], bar_width)
+    bar0 = plt.bar(0, strokes_percentage[0], bar_width, align='center')
+    bar1 = plt.bar(1, strokes_percentage[1], bar_width, align='center')
+    bar2 = plt.bar(2, strokes_percentage[2], bar_width, align='center')
+    bar3 = plt.bar(3, strokes_percentage[3], bar_width, align='center')
+    bar4 = plt.bar(4, strokes_percentage[4], bar_width, align='center')
 
     plt.xlabel('Badminton Strokes')
     plt.ylabel('Percentage of strokes')
@@ -47,7 +47,7 @@ def predict_badminton_strokes(csv_dir):
         X.append(map(float, athlete[0:27])) #Truncate features for X for prediction - eyes and ears are removed
 
     #Load trained model
-    mlp = joblib.load('FYP_MLP.PKL')
+    mlp = joblib.load('FYP_MLP.pkl')
     predictions = mlp.predict(X)
 
     return predictions

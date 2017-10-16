@@ -92,15 +92,17 @@ Outputs : folder_people, folder_bb, list_people
 """
 #Read the json files from a particular folder
 def read_json(path):
-    #json_files = [json_file for json_file in os.listdir(path) if json_file.endswith('.json')]
-    json_files = []
-    subfolders = [folder for folder in os.listdir(path)]
+    json_files = [json_file for json_file in os.listdir(path) if json_file.endswith('.json')]
 
-    #Retrieve all the json files from one subfolder
-    for subfolder in subfolders[1:]:
-        subdir_json_files = []
-        subdir_json_files=[subfolder + '/' + json_file for json_file in os.listdir(os.path.join(path,subfolder)) if json_file.endswith('.json')]
-        json_files += subdir_json_files
+    if json_files:
+        json_files = []
+        subfolders = [folder for folder in os.listdir(path)]
+
+        #Retrieve all the json files from one subfolder
+        for subfolder in subfolders[1:]:
+            subdir_json_files = []
+            subdir_json_files=[subfolder + '/' + json_file for json_file in os.listdir(os.path.join(path,subfolder)) if json_file.endswith('.json')]
+            json_files += subdir_json_files
 
     folder_people = []
     folder_bb = []

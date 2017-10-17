@@ -334,7 +334,7 @@ class PageThree(tk.Frame):
 
         x = [0,1,2,3,4,5]
         strokes_xticks = ['Smash','Lift', 'Net', 'Drive', 'Serve']
-        csv_dir = '/home/lenovo-4/Shiangyoung/BadmintonProject/athlete_data.csv'
+        csv_dir = '/home/tmk/PycharmProjects/BadmintonProject/athlete_data.csv'
 
 
         predictions = nn.predict_badminton_strokes(csv_dir)

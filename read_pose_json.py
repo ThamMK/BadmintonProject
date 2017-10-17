@@ -52,19 +52,34 @@ class BoundingBox(object):
         return self.minx, self.miny, self.width, self.height
 
 
-def draw_bounding_box(input_path, bounding_box_dimension, output_path):
+def draw_bounding_box(input_path, bounding_box_dimension_list):
     # Read the image from the path
+    img_files = glob.glob(input_path + '/*.png')
+    img_files.sort()
+    for index, img_dir in enumerate(img_files):
 
-    img = cv2.imread(input_path)
+        img = cv2.imread(img_dir)
+        bounding_box_dimension = bounding_box_dimension_list[index]
 
-    # Draw the rectange based on the minx and miny coordinate for the first point then minx + width, miny + height for second point
-    #
-    cv2.rectangle(img, (int(bounding_box_dimension[0]), int(bounding_box_dimension[1])), (
-    int(bounding_box_dimension[0]) + int(bounding_box_dimension[2]),
-    int(bounding_box_dimension[1]) + int(bounding_box_dimension[3])), (255, 0, 0), 2)
-    cv2.imwrite(output_path, img)
+        # Draw the rectange based on the minx and miny coordinate for the first point then minx + width, miny + height for second point
+
+        cv2.rectangle(img, (int(bounding_box_dimension[0]), int(bounding_box_dimension[1])), (
+        int(bounding_box_dimension[0]) + int(bounding_box_dimension[2]),
+        int(bounding_box_dimension[1]) + int(bounding_box_dimension[3])), (255, 0, 0), 2)
+        cv2.imwrite(img_dir, img)
     return
 
+def draw_prediction(input_path, predictions):
+    img_files = glob.glob(input_path + "/*.png")
+    img_files.sort()
+    strokes = ['Smash','Lift', 'Net', 'Drive', 'Serve']
+    print(len(img_files))
+    print(len(predictions))
+    for index, img_dir in enumerate(img_files):
+        text = "Prediction : " + strokes[predictions[index]]
+        img = cv2.imread(img_dir)
+        cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255,255,255), 1.5)
+        cv2.imwrite(img_dir,img)
 
 def calculate_largest_bb(list_bb):
     max_width = 0
@@ -94,7 +109,7 @@ Outputs : folder_people, folder_bb, list_people
 def read_json(path):
     json_files = [json_file for json_file in os.listdir(path) if json_file.endswith('.json')]
 
-    if json_files:
+    if not json_files:
         json_files = []
         subfolders = [folder for folder in os.listdir(path)]
 
@@ -103,10 +118,11 @@ def read_json(path):
             subdir_json_files = []
             subdir_json_files=[subfolder + '/' + json_file for json_file in os.listdir(os.path.join(path,subfolder)) if json_file.endswith('.json')]
             json_files += subdir_json_files
-
+    json_files.sort()
     folder_people = []
     folder_bb = []
     list_largest_people = [] #This list only contains the largest person from each image
+    list_largest_bb = []
 
     for index, json_file_name in enumerate(json_files):
         with open(os.path.join(path,json_file_name)) as json_file:
@@ -118,7 +134,7 @@ def read_json(path):
             for i in range(len(data['people'])):
 
 
-                body_part = data['people'][i]['body_parts']
+                body_part = data['people'][i]['pose_keypoints']
 
                 nose, neck, r_shoulder, r_elbow, r_wrist, l_shoulder, l_elbow, l_wrist, r_hip, r_knee, r_ankle, l_hip, l_knee, l_ankle, r_eye, l_eye, r_ear, l_ear = ([] for i in range(18))
                 people = nose, neck, r_shoulder, r_elbow, r_wrist, l_shoulder, l_elbow, l_wrist, r_hip, r_knee, r_ankle, l_hip, l_knee, l_ankle, r_eye, l_eye, r_ear, l_ear
@@ -145,10 +161,11 @@ def read_json(path):
             largest_people = list_people[largest_people_index]
 
             list_largest_people.append(largest_people)
+            list_largest_bb.append(list_bb[largest_bb_index])
             folder_people.append(list_people)
             folder_bb.append(list_bb)
 
-    return folder_people,folder_bb, list_largest_people
+    return folder_people,folder_bb, list_largest_people, list_largest_bb
 
 """
 write_to_csv
@@ -214,7 +231,10 @@ def read_from_csv(csv_dir):
 """
 Main code section
 """
+
 """
+
+
 list_people = []
 
 list_bb = []
@@ -222,31 +242,34 @@ list_bb = []
 folder_people = []
 folder_bb = []
 list_largest_people = [] #List of largest person for each image - each person is from 1 image
-
+list_largest_bb = []
 # Read json of the poses
 json_data_files = glob.glob('output/*.json')
 json_data_files.sort()
 
 
-json_file_dir = '/Users/thammingkeat/PycharmProjects/Drive/Json/Drive_1/Drive_1_000000000001_pose.json'
+#json_file_dir = '/Users/thammingkeat/PycharmProjects/Drive/Json/Drive_1/Drive_1_000000000001_pose.json'
 
-with open(json_file_dir) as data_file:
-    data = json.load(data_file)
+#with open(json_file_dir) as data_file:
+#    data = json.load(data_file)
 
 
 # 0 is the first index for the body part in people
 # returns a list
 # Read image/frame of video
-path = '/Users/thammingkeat/PycharmProjects/Drive_1_images/Drive_1_000000000001_rendered.png'
-img = cv2.imread(path)
+#path = '/Users/thammingkeat/PycharmProjects/Drive_1_images/Drive_1_000000000001_rendered.png'
+#img = cv2.imread(path)
 
-img_dir = '/Users/thammingkeat/PycharmProjects/Drive/Images/'
-json_dir = '/Users/thammingkeat/PycharmProjects/Drive/Json/'
-csv_dir = '/Users/thammingkeat/PycharmProjects/Drive_1_athlete.csv'
+#img_dir = '/Users/thammingkeat/PycharmProjects/Drive/Images/'
+json_dir = os.getcwd() + '/openpose-master/output'
+img_dir = os.getcwd() + '/openpose-master/output'
+csv_dir = os.getcwd() + '/athlete_data2.csv'
+print(json_dir)
 
 #For reading all the json files in a folder
 #Returns a folder of people - consisting of list of people from each image
-folder_people,folder_bb, list_largest_people = read_json(json_dir)
+folder_people,folder_bb, list_largest_people, list_largest_bb = read_json(json_dir)
+draw_bounding_box(img_dir, list_largest_bb)
 """
 # for i in range(len(data['people'])):
 #

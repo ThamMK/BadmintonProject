@@ -7,6 +7,7 @@ from sklearn.externals import joblib
 import itertools
 import matplotlib
 import matplotlib.pyplot as plt
+import os
 
 
 def plot_predictions(strokes_percentage):
@@ -28,7 +29,8 @@ def plot_predictions(strokes_percentage):
     plt.xticks(x,strokes_xticks)
     plt.title('Frequency of badminton strokes')
     #plt.savefig('output/fig.png')
-
+    plt.ioff()
+    plt.close()
     return figure, ax
 
 """
@@ -47,7 +49,8 @@ def predict_badminton_strokes(csv_dir):
         X.append(map(float, athlete[0:27])) #Truncate features for X for prediction - eyes and ears are removed
 
     #Load trained model
-    mlp = joblib.load('FYP_MLP.pkl')
+    neural_model_dir = os.pardir + '/FYP_MLP.pkl'
+    mlp = joblib.load(neural_model_dir)
     predictions = mlp.predict(X)
 
     return predictions

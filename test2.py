@@ -28,6 +28,7 @@ import subprocess,psutil
 from PIL import Image,ImageTk
 import numpy as np
 import neural_network as nn
+import read_pose_json as tool
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def global_paths():
@@ -80,6 +81,7 @@ class SampleApp(tk.Tk):
         '''Show a frame for the given page name'''
         frame = self.frames[page_name]
         frame.tkraise()
+        frame.event_generate("<<ShowFrame>>")
         
     def stop_all(self):
         
@@ -177,6 +179,8 @@ class PageOne(tk.Frame):
         else:
             messagebox.showerror("File is not exist","The file (" + basename  + ") is not found. Please choose a file that is valid.")
 
+
+
 class PageTwo(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -245,7 +249,7 @@ class PageTwo(tk.Frame):
         
         direct =  os.getcwd() + "/output"
         list = os.listdir(direct) # dir is your directory path
-        number_files = len(list)
+        number_files = len(list) / 2 #Divided by 2 because got 2 outputs - json and img
         return number_files
 
     def check_file(self,i=0):
@@ -266,7 +270,7 @@ class PageTwo(tk.Frame):
         global VIDEO_FILE_PATH
         global FIRST_ACCESS_START
         
-        self.cmd = "./build/examples/openpose/openpose.bin --video " + VIDEO_FILE_PATH +" --no_display --write_keypoint_json output/"
+        self.cmd = "./build/examples/openpose/openpose.bin --video " + VIDEO_FILE_PATH +" --no_display --write_keypoint_json output/ --write_images output/ --keypoint_scale 2"
         self.buttonBack.config(state='disabled')
         self.buttonStart.config(text="Stop",command=self.stop_to_start)
         
@@ -280,8 +284,12 @@ class PageTwo(tk.Frame):
             print("Could not open : " + os.path.basename(VIDEO_FILE_PATH))
         
         #Problem with video_to_frame rmb to change divide 2
-        self.length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        
+        if 'cv2.cv' in sys.modules:
+            self.length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+        else:
+            self.length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+
         direct =  os.getcwd() + "/output"
         os.system("rm " + direct + "/*")
         
@@ -330,11 +338,21 @@ class PageThree(tk.Frame):
         instruction.pack(fill="both", pady=(10, 5), padx=(10, 0))
         instruction.config(font=('Calibri',18))
 
+        self.bind("<<ShowFrame>>", self.onShowFrame)
 
+    def onShowFrame(self, event):
+
+        json_dir = os.getcwd() + "/output"
+        img_dir = os.getcwd() + "/output"
+        csv_dir = os.pardir + "/athlete_data.csv"
+        folder_people, folder_bb, list_people, list_bb = tool.read_json(json_dir)
+        tool.draw_bounding_box(img_dir,list_bb)
+        list_people = tool.adjust_coordinates(list_people)
+        tool.write_to_csv(csv_dir, list_people)
 
         x = [0,1,2,3,4,5]
         strokes_xticks = ['Smash','Lift', 'Net', 'Drive', 'Serve']
-        csv_dir = '/home/tmk/PycharmProjects/BadmintonProject/athlete_data.csv'
+
 
 
         predictions = nn.predict_badminton_strokes(csv_dir)
@@ -342,6 +360,7 @@ class PageThree(tk.Frame):
         figure,ax = nn.plot_predictions(strokes_percentage)
         playstyle = nn.calc_playstyle(strokes_percentage)
 
+        tool.draw_prediction(img_dir,predictions)
        
         canvas = FigureCanvasTkAgg(figure, self)
         canvas.show()

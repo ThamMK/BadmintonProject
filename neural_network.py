@@ -29,8 +29,7 @@ def plot_predictions(strokes_percentage):
     plt.xticks(x,strokes_xticks)
     plt.title('Frequency of badminton strokes')
     #plt.savefig('output/fig.png')
-    plt.ioff()
-    plt.close()
+
     return figure, ax
 
 """
@@ -46,9 +45,20 @@ def predict_badminton_strokes(csv_dir):
 
     athlete_data = tools.read_from_csv(csv_dir)
     for athlete in athlete_data:
-        X.append(map(float, athlete[0:27])) #Truncate features for X for prediction - eyes and ears are removed
+        X.append(map(float, athlete[0:28])) #Truncate features for X for prediction - eyes and ears are removed
 
     #Load trained model
+    neural_model_dir = os.pardir + '/FYP_MLP.pkl'
+    mlp = joblib.load(neural_model_dir)
+    predictions = mlp.predict(X)
+
+    return predictions
+
+def predict_badminton_strokes_list(list_person):
+    X = []
+
+    X.append(list(itertools.chain.from_iterable(list_person))) #Convert into a flat list
+    X[0] = X[0][0:28]
     neural_model_dir = os.pardir + '/FYP_MLP.pkl'
     mlp = joblib.load(neural_model_dir)
     predictions = mlp.predict(X)
@@ -86,10 +96,10 @@ def calc_playstyle(strokes_percentage):
 
     return playstyle
 
-
-
 """
-csv_dir = '/Users/thammingkeat/PycharmProjects/athlete_data.csv'
+
+
+csv_dir = '/home/tmk/Downloads/athlete_data.csv'
 athlete_data = tools.read_from_csv(csv_dir)
 
 #Set up data for training
@@ -98,7 +108,7 @@ X = []
 Y = []
 for athlete in athlete_data:
     #Truncate to only 28 features for X, remaining features not required - eye and ear are removed
-    X.append(map(float,athlete[0:27]))
+    X.append(map(float,athlete[0:28]))
     Y.append(map(int,athlete[36]))
 
 

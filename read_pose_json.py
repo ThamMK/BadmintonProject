@@ -78,7 +78,7 @@ def draw_prediction(input_path, predictions):
     for index, img_dir in enumerate(img_files):
         text = "Prediction : " + strokes[predictions[index]]
         img = cv2.imread(img_dir)
-        cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255,255,255), 1.5)
+        cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255,255,255), 1)
         cv2.imwrite(img_dir,img)
 
 def calculate_largest_bb(list_bb):
@@ -107,7 +107,14 @@ Outputs : folder_people, folder_bb, list_people
 """
 #Read the json files from a particular folder
 def read_json(path):
-    json_files = [json_file for json_file in os.listdir(path) if json_file.endswith('.json')]
+
+
+
+    if path.endswith('.json'):
+        json_files = path
+    else:
+        json_files = [json_file for json_file in os.listdir(path) if json_file.endswith('.json')]
+        json_files.sort()
 
     if not json_files:
         json_files = []
@@ -118,7 +125,8 @@ def read_json(path):
             subdir_json_files = []
             subdir_json_files=[subfolder + '/' + json_file for json_file in os.listdir(os.path.join(path,subfolder)) if json_file.endswith('.json')]
             json_files += subdir_json_files
-    json_files.sort()
+        json_files.sort()
+
     folder_people = []
     folder_bb = []
     list_largest_people = [] #This list only contains the largest person from each image

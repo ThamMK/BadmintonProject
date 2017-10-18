@@ -31,6 +31,7 @@ import neural_network as nn
 import read_pose_json as tool
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tryout import Player
+import glob
 
 
 def global_paths():
@@ -343,6 +344,9 @@ class PageThree(tk.Frame):
         instruction.pack(fill="both", pady=(10, 5), padx=(10, 0))
         instruction.config(font=('Calibri',18))
 
+        button = Button(self, text="Create Video", command=self.create_video)
+        button.pack(side=RIGHT, padx=10, pady=10)
+
         self.bind("<<ShowFrame>>", self.onShowFrame)
 
     def onShowFrame(self, event):
@@ -357,8 +361,6 @@ class PageThree(tk.Frame):
 
         x = [0,1,2,3,4,5]
         strokes_xticks = ['Smash','Lift', 'Net', 'Drive', 'Serve']
-
-
 
         predictions = nn.predict_badminton_strokes(csv_dir)
         strokes_percentage = nn.calc_percentage_strokes(predictions)
@@ -382,8 +384,19 @@ class PageThree(tk.Frame):
         percentages = Label(self, text=percentages, anchor="w")
         percentages.pack(padx=(10,50), pady=(10,0), side=LEFT)
             
-                    
-            
+    def create_video(self):
+        path = os.getcwd() + '/output'
+
+        image_files = [image_file for image_file in os.listdir(path) if image_file.endswith('.png')]
+
+        img_name = image_files[0].split('_')
+        img = img_name[0] + '_%12d_' + img_name[2]
+        os.chdir(path)
+        self.cmd = "ffmpeg -r 30 -f image2 -s 1280*720 -i " + img + " -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4"
+        subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+
+
+        return
             
 class Webcam(tk.Frame):
     def __init__(self, parent, controller):
@@ -504,7 +517,7 @@ class RunWebcam(tk.Frame):
             os.system("rm " + direct + "/*")
 
             self.p1 = Process(target=self.openpose_webcam)
-            self.p2 = Process(target=self.process_images_openpsoe(direct))
+            self.p2 = Process(target=self.process_images_openpose(direct))
 
             self.p1.start()
             self.p2.start()
@@ -592,12 +605,43 @@ class RunWebcam(tk.Frame):
         else:
             return max(valid_files, key=os.path.getmtime)
 
-    def process_images_openpsoe(self, direct):
+    def get_latest_json(self, dirpath, valid_extensions=('json')):
+        # get filepaths of all files and dirs in the given dir
+        valid_files = [os.path.join(dirpath, filename) for filename in os.listdir(str(dirpath))]
+
+        # filter out directories, no-extension, and wrong extension files
+        valid_files = [f for f in valid_files if '.' in f and \
+                       f.rsplit('.', 1)[-1] in valid_extensions and os.path.isfile(f)]
+
+        if (len(valid_files) == 0):
+            print("No valid json files in %s" % dirpath)
+            return None
+        else:
+            return max(valid_files, key=os.path.getmtime)
+
+
+    def process_images_openpose(self, direct):
 
         latest_image_path = self.get_latest_image(direct)
+        latest_json_path = self.get_latest_json(direct)
 
-        if (latest_image_path is not None):
+        folder_people = []
+        folder_bb = []
+        list_people = []
+        list_bb = []
+        strokes = ['Smash','Lift', 'Net', 'Drive', 'Serve']
+
+        if (latest_image_path is not None and latest_json_path is not None):
             try:
+                # Get the json out
+                folder_people, folder_bb, list_people, list_bb = tool.read_json(latest_json_path)
+
+                # Normalize their coordinates
+                list_people = tool.adjust_coordinates(list_people)
+
+                prediction = nn.predict_badminton_strokes_list(list_people[0])
+                text = strokes[prediction[0]]
+
                 self.image = Image.open(latest_image_path)
 
                 font = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 40)
@@ -605,7 +649,7 @@ class RunWebcam(tk.Frame):
                 self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
 
                 draw = ImageDraw.Draw(self.image)
-                draw.text(((0 + 10), (0 + 10)), "Smash", (255, 255, 0), font=font)
+                draw.text(((0 + 10), (0 + 10)), text, (255, 255, 0), font=font)
                 draw = ImageDraw.Draw(self.image)
 
                 self.img = ImageTk.PhotoImage(self.image)
@@ -617,7 +661,7 @@ class RunWebcam(tk.Frame):
                 print('Bad file:', latest_image_path)  # print out the names of corrupt files
 
         if (should_continue_checkfile):
-            self.after(600, self.process_images_openpsoe, direct)
+            self.after(600, self.process_images_openpose, direct)
         else:
             self.video_webcam.imgtk = ""
             self.video_webcam.configure(image="")

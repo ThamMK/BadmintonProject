@@ -42,14 +42,17 @@ def global_paths():
     global last_frame
     global should_continue_animating
     global should_continue_checkfile
+    global WEBCAM_SELECTED_NAME
     
     VIDEO_FILE_PATH = None
     FIRST_ACCESS_START = True
     WEBCAM_SELECTED = None
+    WEBCAM_SELECTED_NAME = None
     last_frame = np.zeros((640, 480, 3), dtype=np.uint8)
     should_continue_animating = True
     should_continue_checkfile = True
     ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 
 class SampleApp(tk.Tk):
 
@@ -440,21 +443,25 @@ class Webcam(tk.Frame):
             list_webcam.append(webcam)
             
         return list_webcam
-        
+
     def select_webcam(self):
         selected = self.webcamLB.curselection()
         global should_continue_animating
         should_continue_animating = True
-        
-        print(selected)
-        is_selected = None
+
+        x = None
         for item in selected:
-            if(item is None):
-                print(None)
+            if (item is None):
+                print("None")
             else:
-                is_selected = item
-        
-        if(is_selected is not None):
+                print(str(item))
+                x = item
+
+        for i in selected:
+            global WEBCAM_SELECTED_NAME
+            WEBCAM_SELECTED_NAME = self.webcamLB.get(i).strip(' ')
+
+        if (x is not None):
             self.camera_selected = selected[0]
             global WEBCAM_SELECTED
             WEBCAM_SELECTED = str(self.camera_selected)
@@ -462,10 +469,11 @@ class Webcam(tk.Frame):
             pageRunWebcam.run()
             self.controller.show_frame("RunWebcam")
         else:
-            messagebox.showerror("No device is selected","No camera device is selected. Please select a device to continue.")
+            messagebox.showerror("No device is selected",
+                                 "No camera device is selected. Please select a device to continue.")
             print("Nothing is selected")
-#        for i in selected:
-#            print(self.webcamLB.get(i))
+            #        for i in selected:
+        #            print(self.webcamLB.get(i))
 
 class RunWebcam(tk.Frame):
     def __init__(self, parent, controller):
@@ -504,8 +512,12 @@ class RunWebcam(tk.Frame):
             self.buttonStart.config(text="Stop", command=self.stop_to_start)
             self.buttonBack.config(state='disabled')
 
-            self.cmd = "./build/examples/openpose/openpose.bin --camera " + camera_selected + " --write_images output/ --write_keypoint_json output/ --no_display"
+            width, height = self.search_resolution()
+            print(str(width) + str(height))
 
+            self.cmd = (
+            "./build/examples/openpose/openpose.bin --camera " + camera_selected + " --write_images output/ --write_keypoint_json output/ --no_display --camera_resolution " +
+            str(width) + "x" + str(height) + "")
             self.stop_webcam()
             self.video_webcam.configure(image='', text="Loading..")
 
@@ -619,28 +631,26 @@ class RunWebcam(tk.Frame):
         else:
             return max(valid_files, key=os.path.getmtime)
 
-
     def process_images_openpose(self, direct):
 
         latest_image_path = self.get_latest_image(direct)
         latest_json_path = self.get_latest_json(direct)
-
         folder_people = []
         folder_bb = []
         list_people = []
         list_bb = []
-        strokes = ['Smash','Lift', 'Net', 'Drive', 'Serve']
+        strokes = ['Smash', 'Lift', 'Net', 'Drive', 'Serve']
 
-        if (latest_image_path is not None and latest_json_path is not None):
+        if (latest_image_path is not None):
             try:
                 # Get the json out
-                folder_people, folder_bb, list_people, list_bb = tool.read_json(latest_json_path)
+                # folder_people, folder_bb, list_people, list_bb = tool.read_json(latest_json_path)
 
                 # Normalize their coordinates
-                list_people = tool.adjust_coordinates(list_people)
+                # list_people = tool.adjust_coordinates(list_people)
 
-                prediction = nn.predict_badminton_strokes_list(list_people[0])
-                text = strokes[prediction[0]]
+                # prediction = nn.predict_badminton_strokes_list(list_people[0])
+                # text = strokes[prediction[0]]
 
                 self.image = Image.open(latest_image_path)
 
@@ -649,7 +659,7 @@ class RunWebcam(tk.Frame):
                 self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
 
                 draw = ImageDraw.Draw(self.image)
-                draw.text(((0 + 10), (0 + 10)), text, (255, 255, 0), font=font)
+                draw.text(((0 + 10), (0 + 10)), "Smash", (255, 255, 0), font=font)
                 draw = ImageDraw.Draw(self.image)
 
                 self.img = ImageTk.PhotoImage(self.image)
@@ -671,6 +681,67 @@ class RunWebcam(tk.Frame):
     def stop_checkfile(self):
         global should_continue_checkfile
         should_continue_checkfile = False
+
+    def search_resolution(self):
+        global WEBCAM_SELECTED_NAME
+        found = False
+
+        p = subprocess.Popen('lsusb', stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+        output, errors = p.communicate()
+        lines = output.splitlines()
+
+        width_list = []
+        height_list = []
+        resolution = []
+
+        for i in lines:
+
+            temp = i.split(' ')
+            bus = temp[1]
+            device = temp[3][:-1]
+            name = (' '.join(temp[6:]))
+
+            if (WEBCAM_SELECTED_NAME in name and not found):
+                p = subprocess.Popen('lsusb -s ' + bus + ':' + device + ' -v | egrep "Width|Height"',
+                                     stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+                output, errors = p.communicate()
+                lines = output.splitlines()
+                found = True
+                for j in lines:
+                    temp_j = j.split(' ')
+                    temp_j = filter(None, temp_j)
+                    if (temp_j[0] == 'wWidth'):
+                        width_list.append(temp_j[1])
+                    else:
+                        height_list.append(temp_j[1])
+
+                    if (len(width_list) == 1 and len(height_list) == 1):
+                        resolution.append([width_list.pop(0), height_list.pop(0)])
+            elif (found):
+                break
+
+        resolution = self.remove_duplicate(resolution)
+
+        if (found):
+            maxWidthValue = 0
+            maxHeightValue = 0
+            maxIndex = None
+            for i in range(len(resolution)):
+                widthValue = int(resolution[i][0])
+                heightValue = int(resolution[i][1])
+                if (widthValue >= maxWidthValue and widthValue < 800):
+                    maxWidthValue = widthValue
+                    if (heightValue > maxHeightValue):
+                        maxHeightValue = heightValue
+                        maxIndex = i
+            return int(resolution[maxIndex][0]), int(resolution[maxIndex][1])
+        else:
+            return 1280, 720
+
+    def remove_duplicate(self, seq):
+        b_set = set(map(tuple, seq))  # need to convert the inner lists to tuples so they are hashable
+        b = map(list, b_set)
+        return b
 
 if __name__ == "__main__":
     global_paths()

@@ -258,7 +258,7 @@ class PageTwo(tk.Frame):
         
         direct =  os.getcwd() + "/output"
         list = os.listdir(direct) # dir is your directory path
-        number_files = len(list) / 2 #Divided by 2 because got 2 outputs - json and img
+        number_files = len(list)  #Divided by 2 because got 2 outputs - json and img
         return number_files
 
     def check_file(self,i=0):
@@ -284,7 +284,7 @@ class PageTwo(tk.Frame):
         self.buttonStart.config(text="Stop",command=self.stop_to_start)
         
         if(FIRST_ACCESS_START == True):
-            os.chdir('openpose-master')
+            os.chdir('openpose')
             FIRST_ACCESS_START = False            
             
         cap = cv2.VideoCapture(VIDEO_FILE_PATH)
@@ -397,7 +397,6 @@ class PageThree(tk.Frame):
         os.chdir(path)
         self.cmd = "ffmpeg -r 30 -f image2 -s 1280*720 -i " + img + " -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4"
         subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
-
 
         return
             
@@ -517,12 +516,12 @@ class RunWebcam(tk.Frame):
 
             self.cmd = (
             "./build/examples/openpose/openpose.bin --camera " + camera_selected + " --write_images output/ --write_keypoint_json output/ --no_display --camera_resolution " +
-            str(width) + "x" + str(height) + "")
+            str(width) + "x" + str(height) + " --output_resolution -1x-1")
             self.stop_webcam()
             self.video_webcam.configure(image='', text="Loading..")
 
             if (FIRST_ACCESS_START == True):
-                os.chdir('openpose-master')
+                os.chdir('openpose')
                 FIRST_ACCESS_START = False
 
             direct = os.getcwd() + "/output"
@@ -550,6 +549,11 @@ class RunWebcam(tk.Frame):
             self.quit_process()
             self.buttonBack.config(state='normal')
             self.buttonStart.config(text="Start", command=self.start)
+
+            #Before showing the player
+            #Compile the video with the bounding boxes and prediction
+            self.create_video()
+
             self.controller.show_frame("Player")
 
     def quit_process(self):
@@ -742,6 +746,19 @@ class RunWebcam(tk.Frame):
         b_set = set(map(tuple, seq))  # need to convert the inner lists to tuples so they are hashable
         b = map(list, b_set)
         return b
+
+    def create_video(self):
+        path = os.getcwd() + '/output'
+        print(path)
+        image_files = [image_file for image_file in os.listdir(path) if image_file.endswith('.png')]
+
+        img_name = image_files[0].split('_')
+        img = '%12d_rendered.png'
+        os.chdir(path)
+        self.cmd = "ffmpeg -r 30 -f image2 -s 1280*720 -i " + img + " -vcodec libx264 -crf 25 -pix_fmt yuv420p test.mp4"
+        subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+
+        return
 
 if __name__ == "__main__":
     global_paths()

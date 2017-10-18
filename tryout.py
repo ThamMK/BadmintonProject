@@ -212,7 +212,7 @@ class Player(tk.Frame):
         # you can display all kind of files, having as title "Choose a file".
         p = pathlib.Path(os.path.expanduser("~"))
         #fullname =  askopenfilename(initialdir = p, title = "choose your file",filetypes = (("all files","*.*"),("mp4 files","*.mp4")))
-        fullname = "/home/shiangyoung/Desktop/Badminton/video2.avi"
+        fullname = "/home/tmk/PycharmProjects/BadmintonProject/openpose/output/test.mp4"
         if os.path.isfile(fullname):
             print (fullname)
             splt = os.path.split(fullname)

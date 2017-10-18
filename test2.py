@@ -25,25 +25,30 @@ import cv2
 import sys
 from multiprocessing import Process
 import subprocess,psutil
-from PIL import Image,ImageTk
+from PIL import Image,ImageTk,ImageFile,ImageFont,ImageDraw
 import numpy as np
 import neural_network as nn
 import read_pose_json as tool
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tryout import Player
+
 
 def global_paths():
-    
+
     global VIDEO_FILE_PATH
     global FIRST_ACCESS_START
     global WEBCAM_SELECTED
     global last_frame
     global should_continue_animating
+    global should_continue_checkfile
     
     VIDEO_FILE_PATH = None
     FIRST_ACCESS_START = True
     WEBCAM_SELECTED = None
     last_frame = np.zeros((640, 480, 3), dtype=np.uint8)
     should_continue_animating = True
+    should_continue_checkfile = True
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class SampleApp(tk.Tk):
 
@@ -62,7 +67,7 @@ class SampleApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo,PageThree,Webcam,RunWebcam):
+        for F in (StartPage, PageOne, PageTwo,PageThree,Webcam,RunWebcam,Player):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -323,7 +328,7 @@ class PageTwo(tk.Frame):
         split_cmd = self.cmd.split()
 
         for process in psutil.process_iter():
-            if process.cmdline == split_cmd:
+            if process.cmdline() == split_cmd:
                 print('Process found. Terminating it.')
                 process.terminate()
                 break
@@ -448,116 +453,180 @@ class Webcam(tk.Frame):
             print("Nothing is selected")
 #        for i in selected:
 #            print(self.webcamLB.get(i))
-        
+
 class RunWebcam(tk.Frame):
-    
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        
+
     def run(self):
         pageWebcam = self.controller.get_page("Webcam")
         camera_selected = pageWebcam.camera_selected
-        
+
         self.cam = cv2.VideoCapture(camera_selected)
-        
+
         self.video_webcam = Label(self)
         self.video_webcam.pack()
-        
+
         self.bottom = Frame(self)
-        
-        self.buttonStart = Button(self,text="Start",width=8,command=self.start)
-        self.buttonStart.pack(in_=self.bottom,side=LEFT)
-        
-        self.buttonBack= Button(self,text="Back",width=8,command=self.back_to_previous)
-        self.buttonBack.pack(in_=self.bottom,side=LEFT)
-        
+
+        self.buttonStart = Button(self, text="Start", width=8, command=self.start)
+        self.buttonStart.pack(in_=self.bottom, side=LEFT)
+
+        self.buttonBack = Button(self, text="Back", width=8, command=self.back_to_previous)
+        self.buttonBack.pack(in_=self.bottom, side=LEFT)
+
         self.bottom.pack(side=BOTTOM)
-        
+
         self.start_frame()
-        
-        
+
     def start(self):
         global FIRST_ACCESS_START
         global WEBCAM_SELECTED
-        
-        if(WEBCAM_SELECTED is not None) :  
+
+        if (WEBCAM_SELECTED is not None):
             camera_selected = WEBCAM_SELECTED
             print(camera_selected)
-            
-            self.buttonStart.config(text="Stop",command=self.stop_to_start)
-            
-            self.cmd = "./build/examples/openpose/openpose.bin --camera " + camera_selected + " --write_images output/ --write_keypoint_json output/ "
-            
-            if(FIRST_ACCESS_START == True):
+
+            self.buttonStart.config(text="Stop", command=self.stop_to_start)
+            self.buttonBack.config(state='disabled')
+
+            self.cmd = "./build/examples/openpose/openpose.bin --camera " + camera_selected + " --write_images output/ --write_keypoint_json output/ --no_display"
+
+            self.stop_webcam()
+            self.video_webcam.configure(image='', text="Loading..")
+
+            if (FIRST_ACCESS_START == True):
                 os.chdir('openpose-master')
-                FIRST_ACCESS_START = False            
-                
-            direct =  os.getcwd() + "/output"
+                FIRST_ACCESS_START = False
+
+            direct = os.getcwd() + "/output"
             os.system("rm " + direct + "/*")
-            
-            self.p1 = Process(target = self.openpose_webcam)       
-            #self.p2 = Process(target = self.after(1, self.check_file))
-            
+
+            self.p1 = Process(target=self.openpose_webcam)
+            self.p2 = Process(target=self.process_images_openpsoe(direct))
+
             self.p1.start()
-            #self.p2.start()
-            
-            self.p1.join()
-            #self.p2.join()
-    
+            self.p2.start()
+
     def openpose_webcam(self):
-        
-        #os.system(cmd)
-        subprocess.Popen(self.cmd, stdout=subprocess.PIPE,shell=True, preexec_fn=os.setsid)
-        
+
+        # os.system(cmd)
+        subprocess.Popen(self.cmd, stdout=subprocess.PIPE, shell=True, preexec_fn=os.setsid)
+
     def stop_to_start(self):
-        result = messagebox.askquestion("Stopping the process", "Do you confirm want to stop the process? Once you stop, you cannot resume.", icon='warning')
+        result = messagebox.askquestion("Stopping the process",
+                                        "Do you confirm want to stop the process? Once you stop, you cannot resume.",
+                                        icon='warning')
         if result == 'yes':
             self.p1.terminate()
+            self.p2.terminate()
+            self.stop_checkfile()
             self.quit_process()
             self.buttonBack.config(state='normal')
-            self.buttonStart.config(text="Start",command=self.start)
-            
+            self.buttonStart.config(text="Start", command=self.start)
+            self.controller.show_frame("Player")
+
     def quit_process(self):
-        
+
         split_cmd = self.cmd.split()
 
         for process in psutil.process_iter():
-            if(process.cmdline == split_cmd):
+            if process.cmdline() == split_cmd:
                 print('Process found. Terminating it.')
                 process.terminate()
                 break
-            
+
     def start_frame(self):
         flag, frame = self.cam.read()
         frame = cv2.flip(frame, 1)
         if flag is None:
             print "Major error!"
-    #        <code to handle exception>
+            #        <code to handle exception>
         elif flag:
             global last_frame
             last_frame = frame.copy()
+            cv2image = cv2.cvtColor(last_frame, cv2.COLOR_BGR2RGBA)
+            img = Image.fromarray(cv2image)
+            img = img.resize((540, 360), Image.ANTIALIAS)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.video_webcam.imgtk = imgtk
+            self.video_webcam.configure(image=imgtk)
         else:
             print "Cant process the image"
-    #        <code to handle exception>
-    
-        cv2image = cv2.cvtColor(last_frame, cv2.COLOR_BGR2RGBA)
-        img = Image.fromarray(cv2image)
-        img = img.resize((540, 360), Image.ANTIALIAS) 
-        imgtk = ImageTk.PhotoImage(image=img)
-        self.video_webcam.imgtk = imgtk
-        self.video_webcam.configure(image=imgtk)
-        
+            #        <code to handle exception>
+
         if should_continue_animating:
             self.video_webcam.after(10, self.start_frame)
-        
-    def back_to_previous(self):
+
+    def stop_webcam(self):
         global should_continue_animating
         should_continue_animating = False
         self.cam.release()
+
+    def back_to_previous(self):
+
+        global FIRST_ACCESS_START
+        if (FIRST_ACCESS_START == False):
+            os.chdir('..')
+            FIRST_ACCESS_START = True
+        self.stop_webcam()
         self.video_webcam.pack_forget()
         self.bottom.pack_forget()
         self.controller.show_frame("Webcam")
+
+    def get_latest_image(self, dirpath, valid_extensions=('jpg', 'jpeg', 'png')):
+        """
+        Get the latest image file in the given directory
+        """
+        # get filepaths of all files and dirs in the given dir
+        valid_files = [os.path.join(dirpath, filename) for filename in os.listdir(str(dirpath))]
+
+        # filter out directories, no-extension, and wrong extension files
+        valid_files = [f for f in valid_files if '.' in f and \
+                       f.rsplit('.', 1)[-1] in valid_extensions and os.path.isfile(f)]
+
+        if (len(valid_files) == 0):
+            print("No valid images in %s" % dirpath)
+            return None
+        else:
+            return max(valid_files, key=os.path.getmtime)
+
+    def process_images_openpsoe(self, direct):
+
+        latest_image_path = self.get_latest_image(direct)
+
+        if (latest_image_path is not None):
+            try:
+                self.image = Image.open(latest_image_path)
+
+                font = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 40)
+                self.image = self.image.resize((540, 360), Image.ANTIALIAS)
+                self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
+
+                draw = ImageDraw.Draw(self.image)
+                draw.text(((0 + 10), (0 + 10)), "Smash", (255, 255, 0), font=font)
+                draw = ImageDraw.Draw(self.image)
+
+                self.img = ImageTk.PhotoImage(self.image)
+
+                self.video_webcam.imgtk = self.img
+                self.video_webcam.configure(image=self.img)
+
+            except (IOError, SyntaxError):
+                print('Bad file:', latest_image_path)  # print out the names of corrupt files
+
+        if (should_continue_checkfile):
+            self.after(600, self.process_images_openpsoe, direct)
+        else:
+            self.video_webcam.imgtk = ""
+            self.video_webcam.configure(image="")
+            global should_continue_checkfile
+            should_continue_checkfile = True
+
+    def stop_checkfile(self):
+        global should_continue_checkfile
+        should_continue_checkfile = False
 
 if __name__ == "__main__":
     global_paths()
